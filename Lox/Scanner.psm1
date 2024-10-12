@@ -184,10 +184,10 @@ class Scanner {
 
 	# keywords
 
-	[System.Collections.Generic.Dictionary[string, TokenType]] static $keywords
+	[Dictionary[string, TokenType]] static $keywords
 
 	static Scanner() {
-		$values = [System.Collections.Generic.Dictionary[string, TokenType]]::new()
+		$values = [Dictionary[string, TokenType]]::new()
 		
 		@{
 			"and"    = [TokenType]::TOKEN_AND

@@ -1,3 +1,5 @@
+using namespace System.Collections.Generic
+
 param(
 	[parameter(Mandatory)]
 	[string]$outputDir
@@ -11,11 +13,11 @@ function preprocessTypes(
 	[parameter(Mandatory)]
 	[string[]]$types
 ) {
-	$processedClasses = [System.Collections.Generic.List[hashtable]]::new()
+	$processedClasses = [List[hashtable]]::new()
 	foreach ($type in $types) {
 		$className = $type.Split(":")[0].Trim()
 		$fieldLines = $type.Split(":")[1].Trim()
-		$fields = [System.Collections.Generic.List[hashtable]]::new()
+		$fields = [List[hashtable]]::new()
 		foreach ($field in $fieldLines.Split(",")) {
 			$type, $name = $field.Trim().Split(" ")
 			$fields.Add(@{
