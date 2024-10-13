@@ -52,6 +52,9 @@ else {
 					"clear" {
 						Clear-Host
 					}
+					"help" {
+						Write-Host "Use '#exit' or Exit() to exit" 
+					}
 					Default {
 						Write-Warning "Unknown interpreter command: $line"
 					}
