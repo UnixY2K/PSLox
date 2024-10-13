@@ -120,7 +120,7 @@ class Parser {
 	}
 
 	[boolean] hidden check([TokenType] $type) {
-		if ($this.isAtEnd()) { return false }
+		if ($this.isAtEnd()) { return $false }
 		return $this.peek().type -eq $type
 	}
 
