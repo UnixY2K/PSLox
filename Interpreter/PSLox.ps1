@@ -1,5 +1,8 @@
 #Requires -Version 7
 using module ..\Lox\Scanner.psm1
+using module ..\Lox\Lox.psm1
+using module ..\Lox\AstPrinter.psm1
+using module ..\Lox\Parser.psm1
 
 param(
 	[Parameter()]
@@ -15,15 +18,22 @@ function runFile([string]$path) {
 function run([string]$source) {
 	$scanner = [Scanner]::new($source)
 	$tokens = $scanner.scanTokens()
-	foreach ($token in $tokens) {
-		Write-Host $token.toString()
-	}
+	[Parser] $parser = [Parser]::new($tokens)
+	[Expr] $expression = $parser.parse()
+
+	# Stop if there was a syntax error.
+	if ([Lox]::hadError) { return }
+
+	Write-host ([AstPrinter]::new()).print($expression)
 }
 
 
 # check if the script is not empty
 if ($Script) {
 	runFile($Script)
+	if ([Lox]::hadError) {
+		throw "An error has ocurred while running the script"
+	}
 }
 else {
 	# do a repl loop
@@ -49,6 +59,7 @@ else {
 			}
 			Default {
 				run($line)
+				[Lox]::hadError = $false
 			}
 		}
         

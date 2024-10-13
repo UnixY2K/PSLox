@@ -1,10 +1,12 @@
 using module .\Token.psm1
 using module .\TokenType.psm1
+using module .\Lox.psm1
+
 using namespace System.Collections.Generic
 
 class Scanner {
 
-	[string] hidden $Source = "";
+	[string] hidden $Source = ""
 	[List[Token]] hidden $Tokens = [List[Token]]::new()
 	[int] hidden $Start = 0
 	[int] hidden $Current = 0
@@ -53,10 +55,10 @@ class Scanner {
 			'+' { $this.addToken([TokenType]::TOKEN_PLUS) }
 			';' { $this.addToken([TokenType]::TOKEN_SEMICOLON) }
 			'*' { $this.addToken([TokenType]::TOKEN_STAR) } 
-			'!' { $this.addToken((if ($this.match('=')) { [TokenType]::TOKEN_BANG_EQUAL }		else { [TokenType]::TOKEN_BANG })) }
-			'=' { $this.addToken((if ($this.match('=')) { [TokenType]::TOKEN_EQUAL_EQUAL }		else { [TokenType]::TOKEN_EQUAL })) }
-			'<' { $this.addToken((if ($this.match('=')) { [TokenType]::TOKEN_LESS_EQUAL }		else { [TokenType]::TOKEN_LESS })) }
-			'>' { $this.addToken((if ($this.match('=')) { [TokenType]::TOKEN_GREATER_EQUAL }	else { [TokenType]::TOKEN_GREATER })) }
+			'!' { $this.addToken($(if ($this.match('=')) { [TokenType]::TOKEN_BANG_EQUAL }		else { [TokenType]::TOKEN_BANG })) }
+			'=' { $this.addToken($(if ($this.match('=')) { [TokenType]::TOKEN_EQUAL_EQUAL }		else { [TokenType]::TOKEN_EQUAL })) }
+			'<' { $this.addToken($(if ($this.match('=')) { [TokenType]::TOKEN_LESS_EQUAL }		else { [TokenType]::TOKEN_LESS })) }
+			'>' { $this.addToken($(if ($this.match('=')) { [TokenType]::TOKEN_GREATER_EQUAL }	else { [TokenType]::TOKEN_GREATER })) }
 			'/' {
 				if ($this.match('/')) {
 					while ($this.peek() -ne "`n" -and !$this.isAtEnd()) {
@@ -69,7 +71,7 @@ class Scanner {
 						$this.advance()
 					}
 					if ($this.isAtEnd()) {
-						[Scanner]::error($this.Line, "Unterminated block comment.")
+						[Lox]::error($this.Line, "Unterminated block comment.")
 					}
 					$this.advance()
 					$this.advance()
@@ -78,13 +80,13 @@ class Scanner {
 					$this.addToken([TokenType]::TOKEN_SLASH)
 				}
 			}
-			{ @(' ', '`r', '`t').Contains($_) } {}
+			{ $_ -in @(' ', '`r', '`t') } {}
 			"`n" { $this.Line += 1 }
 			'"' { $this.string() }
 			{ [Scanner]::isDigit($_) } { $this.number() }
 			{ [Scanner]::isAlpha($_) } { $this.identifier() }
 			Default {
-				[Scanner]::error($this.Line, "Unexpected character.")
+				[Lox]::error($this.Line, "Unexpected character.")
 			}
 		}
 	}
@@ -117,7 +119,7 @@ class Scanner {
 		}
 
 		if ($this.isAtEnd()) {
-			[Scanner]::error($this.Line, "Unterminated string.")
+			[Lox]::error($this.Line, "Unterminated string.")
 			return
 		}
 
@@ -173,14 +175,6 @@ class Scanner {
 		return $this.Source[$this.Current + 1]
 	}
 
-
-	[void] static error([int] $line, [string] $message) {
-		[Scanner]::report($line, "", $message)
-	}
-
-	[void] static report([int] $line, [string] $where, [string] $message) {
-		Write-Error "[line $line] Error${where}: $message"
-	}
 
 	# keywords
 
