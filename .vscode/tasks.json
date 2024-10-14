@@ -5,6 +5,11 @@
 			"label": "Amalgamate PSLox",
 			"type": "shell",
 			"command": "PSAmalgamate -f Interpreter/PSLox.ps1 -o out/PSLox.ps1",
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
 		}
 	]
 }
