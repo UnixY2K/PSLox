@@ -1,8 +1,10 @@
 using module .\Token.psm1
 using module .\TokenType.psm1
+using module .\RuntimeError.psm1
 
 class Lox {
 	static [boolean] $hadError = $false
+	static [boolean] $hadRuntimeError = $false
 	
 	static [void] error([int] $line, [string] $message) {
 		[Lox]::report($line, "", $message)
@@ -20,6 +22,11 @@ class Lox {
 	static [void] hidden report([int] $line, [string] $where, [string] $message) {
 		Write-Host "[line $line] Error${where}: $message" -ForegroundColor Red
 		[Lox]::hadError = $true
+	}
+
+	static [void] runtimeError([RuntimeError] $err) {
+		Write-Host "$($error.getMessage())\n[line $($error.token.line)]" -ForegroundColor Red
+		[Lox]::hadRuntimeError = true;
 	}
 
 	

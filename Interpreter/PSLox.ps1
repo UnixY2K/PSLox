@@ -3,6 +3,7 @@ using module ..\Lox\Scanner.psm1
 using module ..\Lox\Lox.psm1
 using module ..\Lox\AstPrinter.psm1
 using module ..\Lox\Parser.psm1
+using module .\Interpreter.psm1
 
 param(
 	[Parameter()]
@@ -10,61 +11,86 @@ param(
 	[string]$Script
 )
 
-function runFile([string]$path) {
-	$script = Get-Content $path -Raw
-	run($script)
-}
+# avoid scope leak
+function main(
+	[string]$Script
+) {
+	[Interpreter]$interpreter = [Interpreter]::new()
 
-function run([string]$source) {
-	$scanner = [Scanner]::new($source)
-	$tokens = $scanner.scanTokens()
-	[Parser] $parser = [Parser]::new($tokens)
-	[Expr] $expression = $parser.parse()
-
-	# Stop if there was a syntax error.
-	if ([Lox]::hadError) { return }
-
-	Write-host ([AstPrinter]::new()).print($expression)
-}
-
-
-# check if the script is not empty
-if ($Script) {
-	runFile($Script)
-	if ([Lox]::hadError) {
-		throw "An error has ocurred while running the script"
+	function runFile([string]$path) {
+		$script = Get-Content $path -Raw
+		run($script)
+		if ([Lox]::hadError) {
+			return 65
+		}
+		if ([Lox]::hadRuntimeError) {
+			return 70
+		}
 	}
-}
-else {
-	# do a repl loop
-	Write-Host "Running in REPL mode"
-	Write-Host "Use '#exit' or Exit() to exit" 
-	while ($true) {
-		Write-Host "PSLox> " -NoNewline
-		$line = Read-Host
-		switch ($line) {
-			{ $_.StartsWith("#") } {
-				$command = $_.Substring(1).ToLowerInvariant()
-				switch ($command) {
-					"exit" { 
-						return
-					}
-					"clear" {
-						Clear-Host
-					}
-					"help" {
-						Write-Host "Use '#exit' or Exit() to exit" 
-					}
-					Default {
-						Write-Warning "Unknown interpreter command: $line"
+
+	function run([string]$source, [Interpreter]$interpreter = [Interpreter]::new(), [bool]$showAST = $false) {
+		$scanner = [Scanner]::new($source)
+		$tokens = $scanner.scanTokens()
+		[Parser] $parser = [Parser]::new($tokens)
+		[Expr] $expression = $parser.parse()
+
+		# Stop if there was a syntax error.
+		if ([Lox]::hadError) { return }
+
+		if ($showAST) {
+			Write-host ([AstPrinter]::new()).print($expression)
+		}
+		$interpreter.interpret($expression)
+	}
+
+
+	# check if the script is not empty
+	if ($Script) {
+		runFile($Script)
+	}
+	else {
+		[bool]$showAST = $false
+		# do a repl loop
+		Write-Host "Running in REPL mode"
+		Write-Host "Use '#exit' or Exit() to exit" 
+		while ($true) {
+			Write-Host "PSLox> " -NoNewline
+			$line = Read-Host
+			switch ($line) {
+				{ $null -eq $_ } {
+					return
+				}
+				{ $_.StartsWith("#") } {
+					$command = $_.Substring(1).ToLowerInvariant()
+					switch ($command) {
+						"exit" { 
+							return
+						}
+						"clear" {
+							Clear-Host
+						}
+						"help" {
+							Write-Host "Use '#exit' or Exit() to exit" 
+						}
+						"ast" {
+							$showAST = !$showAST
+							Write-Host "now $($showAST ? "showing": "hiding") AST"
+						}
+						Default {
+							Write-Warning "Unknown interpreter command: $line"
+						}
 					}
 				}
+				Default {
+					run($line, $interpreter, $showAST)
+					[Lox]::hadError = $false
+				}
 			}
-			Default {
-				run($line)
-				[Lox]::hadError = $false
-			}
-		}
         
+		}
 	}
+
 }
+
+[int]$returnCode = main($Script) ?? 0
+exit $returnCode
