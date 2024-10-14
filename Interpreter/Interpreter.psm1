@@ -61,6 +61,9 @@ class Interpreter: ExprVisitor {
 					TOKEN_EQUAL_EQUAL {
 						return $this.isEqual($left, $right)
 					}
+					TOKEN_COMMA {
+						return $right
+					}
 					Default {
 						throw [RuntimeError]::new($expr.operator, "operand not supported for binary expression")
 					}

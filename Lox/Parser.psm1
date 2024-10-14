@@ -5,8 +5,7 @@ using module .\Lox.psm1
 using namespace System.Collections.Generic
 
 class ParseError: System.Exception {
-    ParseError() :
-        base () {}
+	ParseError() : base () {}
 }
 
 class Parser {
@@ -29,7 +28,19 @@ class Parser {
 	}
 
 	[Expr] hidden expression() {
-		return $this.equality()
+		return $this.comma()
+	}
+
+	[Expr] hidden comma() {
+		$expr = $this.equality()
+		
+		while ($this.match(@([TokenType]::TOKEN_COMMA))) {
+			[Token] $operator = $this.previous()
+			[Expr] $right = $this.expression()
+			$expr = [Binary]::new($expr, $operator, $right)
+		}
+		
+		return $expr
 	}
 
 	[Expr] hidden equality() {
