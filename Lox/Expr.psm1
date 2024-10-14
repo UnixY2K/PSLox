@@ -2,6 +2,7 @@ using module .\Token.psm1
 
 
 class ExprVisitor {
+	visitTernaryExpr([Ternary]$Ternary) {}
 	visitBinaryExpr([Binary]$Binary) {}
 	visitGroupingExpr([Grouping]$Grouping) {}
 	visitLiteralExpr([Literal]$Literal) {}
@@ -10,6 +11,21 @@ class ExprVisitor {
 
 class Expr {
 	[Object] accept([ExprVisitor]$Visitor) { return $null }
+}
+
+class Ternary : Expr {
+	[Expr] hidden $cond
+	[Expr] hidden $left
+	[Expr] hidden $right
+
+	Ternary([Expr] $cond, [Expr] $left, [Expr] $right) {
+		$this.cond = $cond
+		$this.left = $left
+		$this.right = $right
+	}
+	[Object] accept([ExprVisitor]$Visitor) {
+		return $Visitor.visitTernaryExpr($this)
+	}
 }
 
 class Binary : Expr {

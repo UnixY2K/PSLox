@@ -6,6 +6,10 @@ class AstPrinter: ExprVisitor {
 		return $expr.accept($this)
 	}
 
+	[Object] visitTernaryExpr([Ternary]$expr) {
+		return $this.parenthesize("?:", @($expr.cond, $expr.left, $expr.right))
+	}
+
 	[Object] visitBinaryExpr([Binary]$expr) {
 		return $this.parenthesize($expr.operator.lexeme, @($expr.left, $expr.right))
 	}
@@ -31,7 +35,13 @@ class AstPrinter: ExprVisitor {
 		[void]$sb.Append($name)
 		foreach ($expr in $exprs) {
 			[void]$sb.Append(" ")
-			[void]$sb.Append($expr.accept($this))
+			if ($null -ne $expr) {
+				[void]$sb.Append($expr.accept($this))
+			}
+			else {
+				# null expressions means nothing, so we just wrap them in <#nothing#>
+				[void]$sb.Append("<#nothing#>")
+			}
 		}
 		[void]$sb.Append(")")
 		return $sb.ToString()

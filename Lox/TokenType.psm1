@@ -21,6 +21,10 @@ enum TokenType {
     TOKEN_GREATER_EQUAL
     TOKEN_LESS
     TOKEN_LESS_EQUAL
+
+	# misc '?', ':'
+	TOKEN_QUESTION
+	TOKEN_COLON
   
     # Literals.
     TOKEN_IDENTIFIER

@@ -121,6 +121,7 @@ function defineVisitor(
 }
 
 defineAst $outputDir "Expr" @(
+	"Ternary  : Expr cond, Expr left, Expr right",
 	"Binary   : Expr left, Token operator, Expr right",
 	"Grouping : Expr expression",
 	"Literal  : Object value",

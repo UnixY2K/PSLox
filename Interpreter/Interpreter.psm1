@@ -17,6 +17,15 @@ class Interpreter: ExprVisitor {
 		}
 	}
 
+	[Object] visitTernaryExpr([Ternary]$expr) {
+		[Object] $conditional = $this.evaluate($expr.cond)
+		if ($this.isTruthy($conditional)) {
+			$left =	($null -ne $expr.left) ? $this.evaluate($expr.left) : $conditional
+			return $left 
+		}
+		return $this.evaluate($expr.right)
+	}
+
 	[Object] visitBinaryExpr([Binary]$expr) {
 		[Object] $left = $this.evaluate($expr.left);
 		[Object] $right = $this.evaluate($expr.right);

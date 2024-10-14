@@ -32,12 +32,36 @@ class Parser {
 	}
 
 	[Expr] hidden comma() {
-		$expr = $this.equality()
+		$expr = $this.ternary()
 		
 		while ($this.match(@([TokenType]::TOKEN_COMMA))) {
 			[Token] $operator = $this.previous()
 			[Expr] $right = $this.expression()
 			$expr = [Binary]::new($expr, $operator, $right)
+		}
+		
+		return $expr
+	}
+
+	[Expr] hidden ternary() {
+
+		$expr = $this.equality()
+		
+		while ($this.match(@([TokenType]::TOKEN_QUESTION))) {
+			#[Token] $operator = $this.previous()
+			[Expr]$left = $null
+			# '(Expr)?:(Expr) check aka. Elvis operator'
+			if ($this.check([TokenType]::TOKEN_COLON)) {
+				$this.advance()
+			}
+			else {
+				$left = $this.expression()
+				$this.consume([TokenType]::TOKEN_COLON, "Expect ':' after expression.")
+			}
+
+			[Expr]$right = $this.expression()
+
+			$expr = [Ternary]::new($expr, $left, $right)
 		}
 		
 		return $expr

@@ -80,6 +80,8 @@ class Scanner {
 					$this.addToken([TokenType]::TOKEN_SLASH)
 				}
 			}
+			'?' { $this.addToken([TokenType]::TOKEN_QUESTION) }
+			':' { $this.addToken([TokenType]::TOKEN_COLON) }
 			{ $_ -in @(' ', '`r', '`t') } {}
 			"`n" { $this.Line += 1 }
 			'"' { $this.string() }
