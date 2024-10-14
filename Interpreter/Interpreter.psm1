@@ -125,6 +125,9 @@ class Interpreter: ExprVisitor {
 
 	[string] hidden stringify([object] $object) {
 		if ($null -eq $object) { return "nil" }	
+		if ($object -is ([boolean])) {
+			return $object.ToString().ToLowerInvariant()
+		}
 		return $object.toString()
 	}
 }
