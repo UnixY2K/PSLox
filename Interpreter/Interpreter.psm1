@@ -30,10 +30,10 @@ class Interpreter: ExprVisitor {
 						if ($left -is ([double]) -and $right -is ([double])) {
 							return [double]$left + [double]$right;
 						} 
-						if ($left -is ([string]) -and $right -is ([string])) {
+						if ($left -is ([string]) -or $right -is ([string])) {
 							return [string]$left + [string]$right;
 						}
-						throw [RuntimeError]::new($expr.operator, "Both operands must be the same type (number, string)")
+						throw [RuntimeError]::new($expr.operator, "Both operands must be the same type or one string")
 					}
 					TOKEN_SLASH {
 						$this.checkNumberOperands($expr.operator, $left, $right)
