@@ -11,38 +11,37 @@ param(
 	[string]$Script
 )
 
+function runFile([string]$path) {
+	$script = Get-Content $path -Raw
+	run($script)
+	if ([Lox]::hadError) {
+		return 65
+	}
+	if ([Lox]::hadRuntimeError) {
+		return 70
+	}
+}
+
+function run([string]$source, [Interpreter]$interpreter = [Interpreter]::new(), [bool]$showAST = $false) {
+	$scanner = [Scanner]::new($source)
+	$tokens = $scanner.scanTokens()
+	[Parser] $parser = [Parser]::new($tokens)
+	[Expr] $expression = $parser.parse()
+
+	# Stop if there was a syntax error.
+	if ([Lox]::hadError) { return }
+
+	if ($showAST) {
+		Write-host "#>AST>#" ([AstPrinter]::new()).print($expression)
+	}
+	$interpreter.interpret($expression)
+}
+
 # avoid scope leak
 function main(
 	[string]$Script
 ) {
 	[Interpreter]$interpreter = [Interpreter]::new()
-
-	function runFile([string]$path) {
-		$script = Get-Content $path -Raw
-		run($script)
-		if ([Lox]::hadError) {
-			return 65
-		}
-		if ([Lox]::hadRuntimeError) {
-			return 70
-		}
-	}
-
-	function run([string]$source, [Interpreter]$interpreter = [Interpreter]::new(), [bool]$showAST = $false) {
-		$scanner = [Scanner]::new($source)
-		$tokens = $scanner.scanTokens()
-		[Parser] $parser = [Parser]::new($tokens)
-		[Expr] $expression = $parser.parse()
-
-		# Stop if there was a syntax error.
-		if ([Lox]::hadError) { return }
-
-		if ($showAST) {
-			Write-host ([AstPrinter]::new()).print($expression)
-		}
-		$interpreter.interpret($expression)
-	}
-
 
 	# check if the script is not empty
 	if ($Script) {
@@ -82,7 +81,7 @@ function main(
 					}
 				}
 				Default {
-					run($line, $interpreter, $showAST)
+					run $line $interpreter $showAST
 					[Lox]::hadError = $false
 				}
 			}
