@@ -1,4 +1,4 @@
-using module ./Token.psm1
+using module .\Token.psm1
 
 class RuntimeError: System.Exception {
 	[Token] $token
