@@ -42,6 +42,9 @@ function defineAst(
 	[parameter(Mandatory)]
 	[string[]]$requiredModules,
 	[parameter(Mandatory)]
+	[AllowEmptyCollection()]
+	[string[]]$requiredNamespaces,
+	[parameter(Mandatory)]
 	[string[]]$types
 ) {
 	# convert to a more usable format first
@@ -51,6 +54,9 @@ function defineAst(
 		$writer = New-Object System.IO.StreamWriter($path)
 		$requiredModules | ForEach-Object {
 			$writer.WriteLine("using module .\$_")
+		}
+		$requiredNamespaces | ForEach-Object {
+			$writer.WriteLine("using namespace $_")
 		}
 		$writer.WriteLine("`n")
 		defineVisitor -writer $writer -baseName $baseName -types $processedClasses
@@ -131,17 +137,19 @@ function defineVisitor(
 	$writer.WriteLine("}`n")
 }
 
-defineAst $outputDir "Expr" @("Token.psm1") @(
-	"Ternary  : Expr cond, Expr left, Expr right",
-	"Binary   : Expr left, Token operator, Expr right",
-	"Grouping : Expr expression",
-	"Literal  : Object value",
-	"Unary    : Token operator, Expr right",
-	"Variable : Token name"
+defineAst $outputDir "Expr" @("Token.psm1") @() @(
+	"Ternary	: Expr cond, Expr left, Expr right",
+	"Assign		: Token name, Expr value",
+	"Binary		: Expr left, Token operator, Expr right",
+	"Grouping	: Expr expression",
+	"Literal	: Object value",
+	"Unary		: Token operator, Expr right",
+	"Variable	: Token name"
 )
 
-defineAst $outputDir "Stmt" @("Expr.psm1", "Token.psm1") @(
-	"Expression : Expr expression",
-	"Print      : Expr expression",
-	"Var        : Token name, Expr initializer"
+defineAst $outputDir "Stmt" @("Expr.psm1", "Token.psm1") @("System.Collections.Generic") @(
+	"Block		: List[Stmt] statements",
+	"Expression	: Expr expression",
+	"Print		: Expr expression",
+	"Var		: Token name, Expr initializer"
 )

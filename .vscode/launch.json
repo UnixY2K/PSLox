@@ -11,6 +11,15 @@
             "script": "${workspaceFolder}/out/PSLox.ps1",
             "cwd": "${cwd}",
             "preLaunchTask": "Amalgamate PSLox"
+        },
+        {
+            "name": "Run PSLox: run current file",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceFolder}/out/PSLox.ps1",
+            "cwd": "${cwd}",
+            "args": ["${file}"],
+            "preLaunchTask": "Amalgamate PSLox"
         }
 
     ]

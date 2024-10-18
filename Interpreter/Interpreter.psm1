@@ -146,6 +146,23 @@ class Interpreter: StmtVisitor {
 		$stmt.accept($this)
 	}
 
+	[void] executeBlock([List[Stmt]] $statements, [Environment] $environment) {
+		[Environment] $previous = $this.environment
+		try {
+			$this.environment = $environment
+			foreach ($statement in $statements) {
+				$this.execute($statement)
+			}
+		}
+		finally {
+			$this.environment = $previous
+		}
+	}
+
+	[void] visitBlockStmt([Block] $stmt) {
+		$this.executeBlock($stmt.statements, [Environment]::new($this.environment))
+	}
+
 	[void] visitExpressionStmt([Expression] $stmt) {
 		$this.evaluate($stmt.expression)
 	}
@@ -163,6 +180,11 @@ class Interpreter: StmtVisitor {
 		$this.environment.define($stmt.name.lexeme, $value)
 	}
 
+	[object] hidden visitAssignExpr([Assign] $expr) {
+		[Object] $value = $this.evaluate($expr.value)
+		$this.environment.assign($expr.name, $value)
+		return $value
+	}
 
 	[string] hidden stringify([object] $object) {
 		if ($null -eq $object) { return "nil" }	

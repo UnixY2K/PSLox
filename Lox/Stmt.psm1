@@ -1,8 +1,10 @@
 using module .\Expr.psm1
 using module .\Token.psm1
+using namespace System.Collections.Generic
 
 
 class StmtVisitor : ExprVisitor {
+	visitBlockStmt([Block]$Block) {}
 	visitExpressionStmt([Expression]$Expression) {}
 	visitPrintStmt([Print]$Print) {}
 	visitVarStmt([Var]$Var) {}
@@ -10,6 +12,17 @@ class StmtVisitor : ExprVisitor {
 
 class Stmt {
 	[Object] accept([StmtVisitor]$Visitor) { return $null }
+}
+
+class Block : Stmt {
+	[List[Stmt]] hidden $statements
+
+	Block([List[Stmt]] $statements) {
+		$this.statements = $statements
+	}
+	[Object] accept([StmtVisitor]$Visitor) {
+		return $Visitor.visitBlockStmt($this)
+	}
 }
 
 class Expression : Stmt {

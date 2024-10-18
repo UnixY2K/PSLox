@@ -50,6 +50,7 @@ class Parser {
 
 	[Stmt] hidden statement() {
 		if ($this.match(@([TokenType]::TOKEN_PRINT))) { return $this.printStatement() }
+		if ($this.match(@([TokenType]::TOKEN_LEFT_BRACE))) { return [Block]::new($this.block()) }
 	
 		return $this.expressionStatement()
 	}
@@ -78,8 +79,19 @@ class Parser {
 		return [Stmt]::new().Expression($expr)
 	}
 
+	[List[Stmt]] hidden block() {
+		[List[Stmt]] $statements = [List[Stmt]]::new()
+	
+		while (!$this.check([TokenType]::TOKEN_RIGHT_BRACE) -and !$this.isAtEnd()) {
+			$statements.add($this.declaration())
+		}
+	
+		$this.consume([TokenType]::TOKEN_RIGHT_BRACE, "Expect '}' after block.")
+		return $statements
+	}
+
 	[Expr] hidden comma() {
-		$expr = $this.ternary()
+		$expr = $this.assingment()
 		
 		while ($this.match(@([TokenType]::TOKEN_COMMA))) {
 			[Token] $operator = $this.previous()
@@ -87,6 +99,23 @@ class Parser {
 			$expr = [Binary]::new($expr, $operator, $right)
 		}
 		
+		return $expr
+	}
+
+	[Expr] hidden assingment() {
+		[Expr] $expr = $this.ternary()
+
+		if ($this.match([TokenType]::TOKEN_EQUAL)) {
+			[Token] $equals = $this.previous()
+			[Expr] $value = $this.assingment()
+
+			if ($expr -is [Variable]) {
+				[Token] $name = $expr.name
+				return [Assign]::new($name, $value)
+			}
+			$this.error($equals, "Invalid assignment target.")
+		}
+
 		return $expr
 	}
 
