@@ -138,18 +138,19 @@ function defineVisitor(
 }
 
 defineAst $outputDir "Expr" @("Token.psm1") @() @(
-	"Ternary	: Expr cond, Expr left, Expr right",
-	"Assign		: Token name, Expr value",
-	"Binary		: Expr left, Token operator, Expr right",
-	"Grouping	: Expr expression",
-	"Literal	: Object value",
-	"Unary		: Token operator, Expr right",
-	"Variable	: Token name"
+	"Ternary		: Expr cond, Expr left, Expr right",
+	"Assign			: Token name, Expr value",
+	"Binary			: Expr left, Token operator, Expr right",
+	"Grouping		: Expr expression",
+	"Literal		: Object value",
+	"Unary			: Token operator, Expr right",
+	"Variable		: Token name"
 )
 
 defineAst $outputDir "Stmt" @("Expr.psm1", "Token.psm1") @("System.Collections.Generic") @(
-	"Block		: List[Stmt] statements",
-	"Expression	: Expr expression",
-	"Print		: Expr expression",
-	"Var		: Token name, Expr initializer"
+	"Block			: List[Stmt] statements",
+	"TerminalExpr	: Expr expression",
+	"Expression		: Expr expression",
+	"Print			: Expr expression",
+	"Var			: Token name, Expr initializer"
 )

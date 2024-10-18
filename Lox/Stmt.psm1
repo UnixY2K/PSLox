@@ -5,6 +5,7 @@ using namespace System.Collections.Generic
 
 class StmtVisitor : ExprVisitor {
 	visitBlockStmt([Block]$Block) {}
+	visitTerminalExprStmt([TerminalExpr]$TerminalExpr) {}
 	visitExpressionStmt([Expression]$Expression) {}
 	visitPrintStmt([Print]$Print) {}
 	visitVarStmt([Var]$Var) {}
@@ -22,6 +23,17 @@ class Block : Stmt {
 	}
 	[Object] accept([StmtVisitor]$Visitor) {
 		return $Visitor.visitBlockStmt($this)
+	}
+}
+
+class TerminalExpr : Stmt {
+	[Expr] hidden $expression
+
+	TerminalExpr([Expr] $expression) {
+		$this.expression = $expression
+	}
+	[Object] accept([StmtVisitor]$Visitor) {
+		return $Visitor.visitTerminalExprStmt($this)
 	}
 }
 

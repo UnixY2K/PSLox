@@ -163,6 +163,13 @@ class Interpreter: StmtVisitor {
 		$this.executeBlock($stmt.statements, [Environment]::new($this.environment))
 	}
 
+	[void] visitTerminalExprStmt([TerminalExpr] $stmt) {
+		if($null -ne $stmt.expression) {
+			[object] $value = $this.evaluate($stmt.expression)
+			Write-Host $this.stringify($value)
+		}
+	}
+
 	[void] visitExpressionStmt([Expression] $stmt) {
 		$this.evaluate($stmt.expression)
 	}

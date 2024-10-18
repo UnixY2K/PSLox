@@ -75,8 +75,10 @@ class Parser {
 
 	[Stmt] hidden expressionStatement() {
 		[Expr] $expr = $this.expression()
-		$this.consume([TokenType]::TOKEN_SEMICOLON, "Expect ';' after expression.")
-		return [Expression]::new($expr)
+		if ($this.match(@([TokenType]::TOKEN_SEMICOLON))) {
+			return [Expression]::new($expr)
+		}
+		return [TerminalExpr]::new($expr)
 	}
 
 	[List[Stmt]] hidden block() {
@@ -87,6 +89,10 @@ class Parser {
 		}
 	
 		$this.consume([TokenType]::TOKEN_RIGHT_BRACE, "Expect '}' after block.")
+		# add a terminal statement to the block if the last statement is not a terminal statement
+		if ($statements[-1] -isnot [TerminalExpr]) {
+			$statements.add([TerminalExpr]::new($null))
+		}
 		return $statements
 	}
 
