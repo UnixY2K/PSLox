@@ -1,16 +1,20 @@
 using module ../Lox/Lox.psm1
 using module ../Lox/RuntimeError.psm1
 using module ../Lox/Expr.psm1
+using module ../Lox/Stmt.psm1
 using module ../Lox/Token.psm1
 using module ../Lox/TokenType.psm1
 
 
-class Interpreter: ExprVisitor {
+using namespace System.Collections.Generic
 
-	[void] interpret([Expr] $expression) { 
+class Interpreter: StmtVisitor {
+
+	[void] interpret([List[Stmt]] $Statements) { 
 		try {
-			[Object] $value = $this.evaluate($expression);
-			Write-Host $this.stringify($value)
+			foreach ($statement in $statements) {
+				$this.execute($statement)
+			}
 		}
 		catch [RuntimeError] {
 			[Lox]::runtimeError($_)
@@ -27,8 +31,8 @@ class Interpreter: ExprVisitor {
 	}
 
 	[Object] visitBinaryExpr([Binary]$expr) {
-		[Object] $left = $this.evaluate($expr.left);
-		[Object] $right = $this.evaluate($expr.right);
+		[Object] $left = $this.evaluate($expr.left)
+		[Object] $right = $this.evaluate($expr.right)
 
 		return (& { switch ($expr.operator.type) {
 					TOKEN_MINUS {
@@ -37,10 +41,10 @@ class Interpreter: ExprVisitor {
 					}
 					TOKEN_PLUS {
 						if ($left -is ([double]) -and $right -is ([double])) {
-							return [double]$left + [double]$right;
+							return [double]$left + [double]$right
 						} 
 						if ($left -is ([string]) -or $right -is ([string])) {
-							return [string]$left + [string]$right;
+							return [string]$left + [string]$right
 						}
 						throw [RuntimeError]::new($expr.operator, "Both operands must be the same type or one string")
 					}
@@ -88,7 +92,7 @@ class Interpreter: ExprVisitor {
 	}
 
 	[Object] visitUnaryExpr([Unary]$expr) {
-		[Object] $right = $this.evaluate($expr.right);
+		[Object] $right = $this.evaluate($expr.right)
 
 		return (& { switch ($expr.operator.type) {
 					TOKEN_BANG {
@@ -130,6 +134,19 @@ class Interpreter: ExprVisitor {
 
 	[Object] hidden evaluate([Expr] $expr) {
 		return $expr.accept($this)
+	}
+
+	[void] hidden execute([Stmt] $stmt) {
+		$stmt.accept($this)
+	}
+
+	[void] visitExpressionStmt([Expression] $stmt) {
+		$this.evaluate($stmt.expression)
+	}
+
+	[void] visitPrintExpr([Print] $stmt) {
+		[Object] $value = $this.evaluate($stmt.expression)
+		Write-Host $this.stringify($value)
 	}
 
 	[string] hidden stringify([object] $object) {

@@ -26,7 +26,7 @@ class Lox {
 
 	static [void] runtimeError([RuntimeError] $err) {
 		Write-Host "$($error.getMessage())\n[line $($error.token.line)]" -ForegroundColor Red
-		[Lox]::hadRuntimeError = true;
+		[Lox]::hadRuntimeError = true
 	}
 
 	

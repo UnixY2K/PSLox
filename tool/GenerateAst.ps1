@@ -6,6 +6,7 @@ param(
 )
 $ErrorActionPreference = "Stop"
 	
+$global:previousBaseName = $null
 
 function preprocessTypes(
 	[parameter(Mandatory)]
@@ -39,6 +40,8 @@ function defineAst(
 	[parameter(Mandatory)]
 	[string]$baseName,
 	[parameter(Mandatory)]
+	[string[]]$requiredModules,
+	[parameter(Mandatory)]
 	[string[]]$types
 ) {
 	# convert to a more usable format first
@@ -46,7 +49,10 @@ function defineAst(
 	$path = Join-Path $outputDir "$baseName.psm1"
 	try {
 		$writer = New-Object System.IO.StreamWriter($path)
-		$writer.WriteLine("using module .\Token.psm1`n`n")
+		$requiredModules | ForEach-Object {
+			$writer.WriteLine("using module .\$_")
+		}
+		$writer.WriteLine("`n")
 		defineVisitor -writer $writer -baseName $baseName -types $processedClasses
 		$writer.WriteLine("class $baseName {")
 		$writer.WriteLine("`t[Object] accept([ExprVisitor]`$Visitor) { return `$null }")
@@ -112,7 +118,12 @@ function defineVisitor(
 	[parameter(Mandatory)]
 	[hashtable[]]$types
 ) {
-	$writer.WriteLine("class ${baseName}Visitor {")
+	$writer.Write("class ${baseName}Visitor")
+	if ($global:previousBaseName) {
+		$writer.Write(" : ${global:previousBaseName}Visitor")
+	}
+	$global:previousBaseName = "${baseName}"
+	$writer.WriteLine(" {")
 	foreach ($type in $types) {
 		$className = $type.Name
 		$writer.WriteLine("`tvisit${className}Expr([${className}]`$${className}) {}")
@@ -120,10 +131,15 @@ function defineVisitor(
 	$writer.WriteLine("}`n")
 }
 
-defineAst $outputDir "Expr" @(
+defineAst $outputDir "Expr" @("Token.psm1") @(
 	"Ternary  : Expr cond, Expr left, Expr right",
 	"Binary   : Expr left, Token operator, Expr right",
 	"Grouping : Expr expression",
 	"Literal  : Object value",
 	"Unary    : Token operator, Expr right"
+)
+
+defineAst $outputDir "Stmt" @("Expr.psm1") @(
+	"Expression : Expr expression",
+	"Print      : Expr expression"
 )

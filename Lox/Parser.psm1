@@ -1,7 +1,9 @@
 using module .\Token.psm1
 using module .\TokenType.psm1
 using module .\Expr.psm1
+using module .\Stmt.psm1
 using module .\Lox.psm1
+
 using namespace System.Collections.Generic
 
 class ParseError: System.Exception {
@@ -18,9 +20,13 @@ class Parser {
 		$this.Tokens = $Tokens
 	}
 
-	[Expr] parse() {
+	[List[Stmt]] parse() {
 		try {
-			return $this.expression()
+			[List[Stmt]] $statements = [List[Stmt]]::new()
+			while (!$this.isAtEnd()) {
+				$statements.add($this.statement())
+			}
+			return $statements
 		}
 		catch [ParseError] {
 			return $null
@@ -29,6 +35,24 @@ class Parser {
 
 	[Expr] hidden expression() {
 		return $this.comma()
+	}
+
+	[Stmt] hidden statement() {
+		if ($this.match(@([TokenType]::TOKEN_PRINT))) { return $this.printStatement() }
+	
+		return $this.expressionStatement()
+	}
+
+	[Stmt] hidden printStatement() {
+		[Expr] $value = $this.expression()
+		$this.consume([TokenType]::TOKEN_SEMICOLON, "Expect ';' after value.")
+		return [Print]::new($value)
+	}
+
+	[Stmt] hidden expressionStatement() {
+		[Expr] $expr = $this.expression()
+		$this.consume([TokenType]::TOKEN_SEMICOLON, "Expect ';' after expression.")
+		return [Stmt]::new().Expression($expr)
 	}
 
 	[Expr] hidden comma() {

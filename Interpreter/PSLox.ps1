@@ -5,6 +5,8 @@ using module ..\Lox\AstPrinter.psm1
 using module ..\Lox\Parser.psm1
 using module .\Interpreter.psm1
 
+using namespace System.Collections.Generic
+
 param(
 	[Parameter()]
 	[ValidateNotNullOrEmpty()]
@@ -26,7 +28,7 @@ function run([string]$source, [Interpreter]$interpreter = [Interpreter]::new(), 
 	$scanner = [Scanner]::new($source)
 	$tokens = $scanner.scanTokens()
 	[Parser] $parser = [Parser]::new($tokens)
-	[Expr] $expression = $parser.parse()
+	[List[Stmt]] $statements = $parser.parse()
 
 	# Stop if there was a syntax error.
 	if ([Lox]::hadError) { return }
@@ -34,7 +36,7 @@ function run([string]$source, [Interpreter]$interpreter = [Interpreter]::new(), 
 	if ($showAST) {
 		Write-host "#>AST>#" ([AstPrinter]::new()).print($expression)
 	}
-	$interpreter.interpret($expression)
+	$interpreter.interpret($statements)
 }
 
 # avoid scope leak

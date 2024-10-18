@@ -4,6 +4,6 @@ class RuntimeError: System.Exception {
 	[Token] $token
   
 	RuntimeError([Token] $token, [string] $message): base($message) {
-		$this.token = $token;
+		$this.token = $token
 	}
 }
