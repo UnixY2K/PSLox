@@ -173,7 +173,7 @@ class Interpreter: StmtVisitor {
 	}
 
 	[void] visitVarStmt([Var] $stmt) {
-		[Object] $value = $null
+		[Object] $value = [void]
 		if ($null -ne $stmt.initializer) {
 			$value = $this.evaluate($stmt.initializer)
 		}

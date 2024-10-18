@@ -76,7 +76,7 @@ class Parser {
 	[Stmt] hidden expressionStatement() {
 		[Expr] $expr = $this.expression()
 		$this.consume([TokenType]::TOKEN_SEMICOLON, "Expect ';' after expression.")
-		return [Stmt]::new().Expression($expr)
+		return [Expression]::new($expr)
 	}
 
 	[List[Stmt]] hidden block() {
@@ -105,7 +105,7 @@ class Parser {
 	[Expr] hidden assingment() {
 		[Expr] $expr = $this.ternary()
 
-		if ($this.match([TokenType]::TOKEN_EQUAL)) {
+		if ($this.match(@([TokenType]::TOKEN_EQUAL))) {
 			[Token] $equals = $this.previous()
 			[Expr] $value = $this.assingment()
 

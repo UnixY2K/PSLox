@@ -19,7 +19,11 @@ class Environment {
 
 	[object] get([Token] $name) {
 		if ($this.values.ContainsKey($name.lexeme)) {
-			return $this.values[$name.lexeme]
+			$value = $this.values[$name.lexeme]
+			if ($value -eq [void]) {
+				throw [RuntimeError]::new($name, "Uninitialized variable '$($name.lexeme)'.")
+			}
+			return $value
 		}
 
 		if ($null -ne $this.enclosing) {
@@ -43,7 +47,7 @@ class Environment {
 		throw [RuntimeError]::new($name, "Undefined variable '$($name.lexeme)'.")
 	}
 
-	[void] define([string] $name, $value) {
+	[void] define([string] $name, [object]$value) {
 		$this.values[$name] = $value
 	}
 }
