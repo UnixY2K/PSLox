@@ -1,13 +1,15 @@
 using module .\Expr.psm1
+using module .\Token.psm1
 
 
 class StmtVisitor : ExprVisitor {
-	visitExpressionExpr([Expression]$Expression) {}
-	visitPrintExpr([Print]$Print) {}
+	visitExpressionStmt([Expression]$Expression) {}
+	visitPrintStmt([Print]$Print) {}
+	visitVarStmt([Var]$Var) {}
 }
 
 class Stmt {
-	[Object] accept([ExprVisitor]$Visitor) { return $null }
+	[Object] accept([StmtVisitor]$Visitor) { return $null }
 }
 
 class Expression : Stmt {
@@ -16,8 +18,8 @@ class Expression : Stmt {
 	Expression([Expr] $expression) {
 		$this.expression = $expression
 	}
-	[Object] accept([ExprVisitor]$Visitor) {
-		return $Visitor.visitExpressionExpr($this)
+	[Object] accept([StmtVisitor]$Visitor) {
+		return $Visitor.visitExpressionStmt($this)
 	}
 }
 
@@ -27,8 +29,21 @@ class Print : Stmt {
 	Print([Expr] $expression) {
 		$this.expression = $expression
 	}
-	[Object] accept([ExprVisitor]$Visitor) {
-		return $Visitor.visitPrintExpr($this)
+	[Object] accept([StmtVisitor]$Visitor) {
+		return $Visitor.visitPrintStmt($this)
+	}
+}
+
+class Var : Stmt {
+	[Token] hidden $name
+	[Expr] hidden $initializer
+
+	Var([Token] $name, [Expr] $initializer) {
+		$this.name = $name
+		$this.initializer = $initializer
+	}
+	[Object] accept([StmtVisitor]$Visitor) {
+		return $Visitor.visitVarStmt($this)
 	}
 }
 

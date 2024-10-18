@@ -24,7 +24,7 @@ class Parser {
 		try {
 			[List[Stmt]] $statements = [List[Stmt]]::new()
 			while (!$this.isAtEnd()) {
-				$statements.add($this.statement())
+				$statements.add($this.declaration())
 			}
 			return $statements
 		}
@@ -37,6 +37,17 @@ class Parser {
 		return $this.comma()
 	}
 
+	[Stmt] hidden declaration() {
+		try {
+			if ($this.match(@([TokenType]::TOKEN_VAR))) { return $this.varDeclaration() }
+			return $this.statement()
+		}
+		catch [ParseError] {
+			$this.synchronize()
+			return $null
+		}
+	}
+
 	[Stmt] hidden statement() {
 		if ($this.match(@([TokenType]::TOKEN_PRINT))) { return $this.printStatement() }
 	
@@ -47,6 +58,18 @@ class Parser {
 		[Expr] $value = $this.expression()
 		$this.consume([TokenType]::TOKEN_SEMICOLON, "Expect ';' after value.")
 		return [Print]::new($value)
+	}
+
+	[Stmt] hidden varDeclaration() {
+		[Token] $name = $this.consume([TokenType]::TOKEN_IDENTIFIER, "Expect variable name.")
+	
+		[Expr] $initializer = $null
+		if ($this.match(@([TokenType]::TOKEN_EQUAL))) {
+			$initializer = $this.expression()
+		}
+	
+		$this.consume([TokenType]::TOKEN_SEMICOLON, "Expect ';' after variable declaration.")
+		return [Var]::new($name, $initializer)
 	}
 
 	[Stmt] hidden expressionStatement() {
@@ -155,6 +178,10 @@ class Parser {
 	
 		if ($this.match(@([TokenType]::TOKEN_NUMBER, [TokenType]::TOKEN_STRING))) {
 			return [Literal]::new($this.previous().literal)
+		}
+
+		if ($this.match(@([TokenType]::TOKEN_IDENTIFIER))) {
+			return [Variable]::new($this.previous())
 		}
 	
 		if ($this.match(@([TokenType]::TOKEN_LEFT_PAREN))) {

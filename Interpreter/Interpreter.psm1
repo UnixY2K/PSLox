@@ -4,11 +4,13 @@ using module ../Lox/Expr.psm1
 using module ../Lox/Stmt.psm1
 using module ../Lox/Token.psm1
 using module ../Lox/TokenType.psm1
-
+using module ../Lox/Environment.psm1
 
 using namespace System.Collections.Generic
 
 class Interpreter: StmtVisitor {
+
+	[Environment] hidden $environment = [Environment]::new()
 
 	[void] interpret([List[Stmt]] $Statements) { 
 		try {
@@ -17,7 +19,7 @@ class Interpreter: StmtVisitor {
 			}
 		}
 		catch [RuntimeError] {
-			[Lox]::runtimeError($_)
+			[Lox]::runtimeError($_.Exception)
 		}
 	}
 
@@ -108,6 +110,10 @@ class Interpreter: StmtVisitor {
 				} })
 	}
 
+	[Object] visitVariableExpr([Variable]$expr) {
+		return $this.environment.get($expr.name)
+	}
+
 	[boolean] hidden isTruthy([Object] $object) {
 		if ($null -eq $object) { return $false }
 		if ($object -is ([boolean])) { return [boolean]$object }
@@ -144,10 +150,19 @@ class Interpreter: StmtVisitor {
 		$this.evaluate($stmt.expression)
 	}
 
-	[void] visitPrintExpr([Print] $stmt) {
+	[void] visitPrintStmt([Print] $stmt) {
 		[Object] $value = $this.evaluate($stmt.expression)
 		Write-Host $this.stringify($value)
 	}
+
+	[void] visitVarStmt([Var] $stmt) {
+		[Object] $value = $null
+		if ($null -ne $stmt.initializer) {
+			$value = $this.evaluate($stmt.initializer)
+		}
+		$this.environment.define($stmt.name.lexeme, $value)
+	}
+
 
 	[string] hidden stringify([object] $object) {
 		if ($null -eq $object) { return "nil" }	

@@ -55,7 +55,7 @@ function defineAst(
 		$writer.WriteLine("`n")
 		defineVisitor -writer $writer -baseName $baseName -types $processedClasses
 		$writer.WriteLine("class $baseName {")
-		$writer.WriteLine("`t[Object] accept([ExprVisitor]`$Visitor) { return `$null }")
+		$writer.WriteLine("`t[Object] accept([${baseName}Visitor]`$Visitor) { return `$null }")
 		$writer.WriteLine("}`n")
 		
 		foreach ($class in $processedClasses) {
@@ -102,8 +102,8 @@ function defineType(
 	[void]$sb.AppendLine("`t}")
 
 	# define accept method
-	[void]$sb.AppendLine("`t[Object] accept([ExprVisitor]`$Visitor) {")
-	[void]$sb.AppendLine("`t`treturn `$Visitor.visit$($class.Name)Expr(`$this)")
+	[void]$sb.AppendLine("`t[Object] accept([${baseName}Visitor]`$Visitor) {")
+	[void]$sb.AppendLine("`t`treturn `$Visitor.visit$($class.Name)${baseName}(`$this)")
 	[void]$sb.AppendLine("`t}")
 
 	[void]$sb.AppendLine("}")
@@ -126,7 +126,7 @@ function defineVisitor(
 	$writer.WriteLine(" {")
 	foreach ($type in $types) {
 		$className = $type.Name
-		$writer.WriteLine("`tvisit${className}Expr([${className}]`$${className}) {}")
+		$writer.WriteLine("`tvisit${className}${baseName}([${className}]`$${className}) {}")
 	}
 	$writer.WriteLine("}`n")
 }
@@ -136,10 +136,12 @@ defineAst $outputDir "Expr" @("Token.psm1") @(
 	"Binary   : Expr left, Token operator, Expr right",
 	"Grouping : Expr expression",
 	"Literal  : Object value",
-	"Unary    : Token operator, Expr right"
+	"Unary    : Token operator, Expr right",
+	"Variable : Token name"
 )
 
-defineAst $outputDir "Stmt" @("Expr.psm1") @(
+defineAst $outputDir "Stmt" @("Expr.psm1", "Token.psm1") @(
 	"Expression : Expr expression",
-	"Print      : Expr expression"
+	"Print      : Expr expression",
+	"Var        : Token name, Expr initializer"
 )

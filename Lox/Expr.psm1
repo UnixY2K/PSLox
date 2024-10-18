@@ -7,6 +7,7 @@ class ExprVisitor {
 	visitGroupingExpr([Grouping]$Grouping) {}
 	visitLiteralExpr([Literal]$Literal) {}
 	visitUnaryExpr([Unary]$Unary) {}
+	visitVariableExpr([Variable]$Variable) {}
 }
 
 class Expr {
@@ -75,6 +76,17 @@ class Unary : Expr {
 	}
 	[Object] accept([ExprVisitor]$Visitor) {
 		return $Visitor.visitUnaryExpr($this)
+	}
+}
+
+class Variable : Expr {
+	[Token] hidden $name
+
+	Variable([Token] $name) {
+		$this.name = $name
+	}
+	[Object] accept([ExprVisitor]$Visitor) {
+		return $Visitor.visitVariableExpr($this)
 	}
 }
 
