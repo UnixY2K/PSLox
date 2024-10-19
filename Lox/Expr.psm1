@@ -7,6 +7,7 @@ class ExprVisitor {
 	visitBinaryExpr([Binary]$Binary) {}
 	visitGroupingExpr([Grouping]$Grouping) {}
 	visitLiteralExpr([Literal]$Literal) {}
+	visitLogicalExpr([Logical]$Logical) {}
 	visitUnaryExpr([Unary]$Unary) {}
 	visitVariableExpr([Variable]$Variable) {}
 }
@@ -77,6 +78,21 @@ class Literal : Expr {
 	}
 	[Object] accept([ExprVisitor]$Visitor) {
 		return $Visitor.visitLiteralExpr($this)
+	}
+}
+
+class Logical : Expr {
+	[Expr] hidden $left
+	[Token] hidden $operator
+	[Expr] hidden $right
+
+	Logical([Expr] $left, [Token] $operator, [Expr] $right) {
+		$this.left = $left
+		$this.operator = $operator
+		$this.right = $right
+	}
+	[Object] accept([ExprVisitor]$Visitor) {
+		return $Visitor.visitLogicalExpr($this)
 	}
 }
 

@@ -49,16 +49,93 @@ class Parser {
 	}
 
 	[Stmt] hidden statement() {
+		if ($this.match(@([TokenType]::TOKEN_FOR))) { return $this.forStatement() }
+		if ($this.match(@([TokenType]::TOKEN_IF))) { return $this.ifStatement() }
 		if ($this.match(@([TokenType]::TOKEN_PRINT))) { return $this.printStatement() }
+		if ($this.match(@([TokenType]::TOKEN_WHILE))) { return $this.whileStatement() }
 		if ($this.match(@([TokenType]::TOKEN_LEFT_BRACE))) { return [Block]::new($this.block()) }
 	
 		return $this.expressionStatement()
+	}
+
+	[Stmt] hidden forStatement() {
+		$this.consume([TokenType]::TOKEN_LEFT_PAREN, "Expect '(' after 'for'.")
+
+		[Stmt] $initializer = $null
+		if (!$this.match(@([TokenType]::TOKEN_SEMICOLON))) {
+			$initializer = $null
+		}
+		if ($this.match(@([TokenType]::TOKEN_VAR))) {
+			$initializer = $this.varDeclaration()
+		}
+		else {
+			$initializer = $this.expressionStatement()
+		}
+
+		[Expr] $condition = $null
+		if (!$this.check([TokenType]::TOKEN_SEMICOLON)) {
+			$condition = $this.expression()
+		}
+		$this.consume([TokenType]::TOKEN_SEMICOLON, "Expect ';' after loop condition.")
+
+		[Expr] $increment = $null
+		if (!$this.check([TokenType]::TOKEN_RIGHT_PAREN)) {
+			$increment = $this.expression()
+		}
+		$this.consume([TokenType]::TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.")
+		
+		[Stmt] $body = $this.statement()
+
+		if ($null -ne $increment) {
+			$body = [Block]::new(@(
+						$body, 
+						[Expression]::new($increment)
+					))
+		}
+
+		if ($null -eq $condition) {
+			$condition = [Literal]::new($true)
+		}
+		$body = [While]::new($condition, $body)
+
+		if ($null -ne $initializer) {
+			$body = [Block]::new(@(
+						$initializer, 
+						$body
+					))
+		}
+
+		return $body
+	}
+
+	[Stmt] hidden ifStatement() {
+		$this.consume([TokenType]::TOKEN_LEFT_PAREN, "Expect '(' after 'if'.")
+		[Expr] $condition = $this.expression()
+		$this.consume([TokenType]::TOKEN_RIGHT_PAREN, "Expect ')' after if condition.")
+	
+		[Stmt] $thenBranch = $this.statement()
+		[Stmt] $elseBranch = $null
+		if ($this.match(@([TokenType]::TOKEN_ELSE))) {
+			$elseBranch = $this.statement()
+		}
+	
+		return [If]::new($condition, $thenBranch, $elseBranch)
 	}
 
 	[Stmt] hidden printStatement() {
 		[Expr] $value = $this.expression()
 		$this.consume([TokenType]::TOKEN_SEMICOLON, "Expect ';' after value.")
 		return [Print]::new($value)
+	}
+
+	[Stmt] hidden whileStatement() {
+		$this.consume([TokenType]::TOKEN_LEFT_PAREN, "Expect '(' after 'while'.")
+		[Expr] $condition = $this.expression()
+		$this.consume([TokenType]::TOKEN_RIGHT_PAREN, "Expect ')' after condition.")
+	
+		[Stmt] $body = $this.statement()
+	
+		return [While]::new($condition, $body)
 	}
 
 	[Stmt] hidden varDeclaration() {
@@ -127,7 +204,7 @@ class Parser {
 
 	[Expr] hidden ternary() {
 
-		$expr = $this.equality()
+		$expr = $this.or()
 		
 		while ($this.match(@([TokenType]::TOKEN_QUESTION))) {
 			#[Token] $operator = $this.previous()
@@ -146,6 +223,30 @@ class Parser {
 			$expr = [Ternary]::new($expr, $left, $right)
 		}
 		
+		return $expr
+	}
+
+	[Expr] hidden or() {
+		[Expr] $expr = $this.and()
+
+		while ($this.match(@([TokenType]::TOKEN_OR))) {
+			[Token] $operator = $this.previous()
+			[Expr] $right = $this.and()
+			$expr = [Logical]::new($expr, $operator, $right)
+		}
+
+		return $expr
+	}
+
+	[Expr] hidden and() {
+		[Expr] $expr = $this.equality()
+
+		while ($this.match(@([TokenType]::TOKEN_AND))) {
+			[Token] $operator = $this.previous()
+			[Expr] $right = $this.equality()
+			$expr = [Logical]::new($expr, $operator, $right)
+		}
+
 		return $expr
 	}
 

@@ -7,8 +7,10 @@ class StmtVisitor : ExprVisitor {
 	visitBlockStmt([Block]$Block) {}
 	visitTerminalExprStmt([TerminalExpr]$TerminalExpr) {}
 	visitExpressionStmt([Expression]$Expression) {}
+	visitIfStmt([If]$If) {}
 	visitPrintStmt([Print]$Print) {}
 	visitVarStmt([Var]$Var) {}
+	visitWhileStmt([While]$While) {}
 }
 
 class Stmt {
@@ -48,6 +50,21 @@ class Expression : Stmt {
 	}
 }
 
+class If : Stmt {
+	[Expr] hidden $condition
+	[Stmt] hidden $thenBranch
+	[Stmt] hidden $elseBranch
+
+	If([Expr] $condition, [Stmt] $thenBranch, [Stmt] $elseBranch) {
+		$this.condition = $condition
+		$this.thenBranch = $thenBranch
+		$this.elseBranch = $elseBranch
+	}
+	[Object] accept([StmtVisitor]$Visitor) {
+		return $Visitor.visitIfStmt($this)
+	}
+}
+
 class Print : Stmt {
 	[Expr] hidden $expression
 
@@ -69,6 +86,19 @@ class Var : Stmt {
 	}
 	[Object] accept([StmtVisitor]$Visitor) {
 		return $Visitor.visitVarStmt($this)
+	}
+}
+
+class While : Stmt {
+	[Expr] hidden $condition
+	[Stmt] hidden $body
+
+	While([Expr] $condition, [Stmt] $body) {
+		$this.condition = $condition
+		$this.body = $body
+	}
+	[Object] accept([StmtVisitor]$Visitor) {
+		return $Visitor.visitWhileStmt($this)
 	}
 }
 

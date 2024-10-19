@@ -93,6 +93,18 @@ class Interpreter: StmtVisitor {
 		return $expr.value
 	}
 
+	[Object] visitLogicalExpr([Logical]$expr) {
+		[Object] $left = $this.evaluate($expr.left)
+
+		if ($expr.operator.type -eq [TokenType]::TOKEN_OR) {
+			if ($this.isTruthy($left)) { return $left }
+		}
+		else {
+			if (!$this.isTruthy($left)) { return $left }
+		}
+		return $this.evaluate($expr.right)
+	}
+
 	[Object] visitUnaryExpr([Unary]$expr) {
 		[Object] $right = $this.evaluate($expr.right)
 
@@ -164,7 +176,7 @@ class Interpreter: StmtVisitor {
 	}
 
 	[void] visitTerminalExprStmt([TerminalExpr] $stmt) {
-		if($null -ne $stmt.expression) {
+		if ($null -ne $stmt.expression) {
 			[object] $value = $this.evaluate($stmt.expression)
 			Write-Host $this.stringify($value)
 		}
@@ -172,6 +184,15 @@ class Interpreter: StmtVisitor {
 
 	[void] visitExpressionStmt([Expression] $stmt) {
 		$this.evaluate($stmt.expression)
+	}
+
+	[void] visitIfStmt([If] $stmt) {
+		if ($this.isTruthy($this.evaluate($stmt.condition))) {
+			$this.execute($stmt.thenBranch)
+		}
+		elseif ($null -ne $stmt.elseBranch) {
+			$this.execute($stmt.elseBranch)
+		}
 	}
 
 	[void] visitPrintStmt([Print] $stmt) {
@@ -185,6 +206,12 @@ class Interpreter: StmtVisitor {
 			$value = $this.evaluate($stmt.initializer)
 		}
 		$this.environment.define($stmt.name.lexeme, $value)
+	}
+
+	[void] visitWhileStmt([While] $stmt) {
+		while ($this.isTruthy($this.evaluate($stmt.condition))) {
+			$this.execute($stmt.body)
+		}
 	}
 
 	[object] hidden visitAssignExpr([Assign] $expr) {
