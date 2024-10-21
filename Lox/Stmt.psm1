@@ -7,6 +7,7 @@ class StmtVisitor : ExprVisitor {
 	visitBlockStmt([Block]$Block) {}
 	visitTerminalExprStmt([TerminalExpr]$TerminalExpr) {}
 	visitExpressionStmt([Expression]$Expression) {}
+	visitFunctionStmt([Function]$Function) {}
 	visitIfStmt([If]$If) {}
 	visitPrintStmt([Print]$Print) {}
 	visitVarStmt([Var]$Var) {}
@@ -47,6 +48,21 @@ class Expression : Stmt {
 	}
 	[Object] accept([StmtVisitor]$Visitor) {
 		return $Visitor.visitExpressionStmt($this)
+	}
+}
+
+class Function : Stmt {
+	[Token] hidden $name
+	[List[Token]] hidden $params
+	[List[Stmt]] hidden $body
+
+	Function([Token] $name, [List[Token]] $params, [List[Stmt]] $body) {
+		$this.name = $name
+		$this.params = $params
+		$this.body = $body
+	}
+	[Object] accept([StmtVisitor]$Visitor) {
+		return $Visitor.visitFunctionStmt($this)
 	}
 }
 

@@ -5,6 +5,7 @@ class ExprVisitor {
 	visitTernaryExpr([Ternary]$Ternary) {}
 	visitAssignExpr([Assign]$Assign) {}
 	visitBinaryExpr([Binary]$Binary) {}
+	visitCallExpr([Call]$Call) {}
 	visitGroupingExpr([Grouping]$Grouping) {}
 	visitLiteralExpr([Literal]$Literal) {}
 	visitLogicalExpr([Logical]$Logical) {}
@@ -56,6 +57,21 @@ class Binary : Expr {
 	}
 	[Object] accept([ExprVisitor]$Visitor) {
 		return $Visitor.visitBinaryExpr($this)
+	}
+}
+
+class Call : Expr {
+	[Expr] hidden $callee
+	[Token] hidden $paren
+	[List[Expr]] hidden $arguments
+
+	Call([Expr] $callee, [Token] $paren, [List[Expr]] $arguments) {
+		$this.callee = $callee
+		$this.paren = $paren
+		$this.arguments = $arguments
+	}
+	[Object] accept([ExprVisitor]$Visitor) {
+		return $Visitor.visitCallExpr($this)
 	}
 }
 

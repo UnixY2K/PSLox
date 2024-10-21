@@ -39,6 +39,7 @@ class Parser {
 
 	[Stmt] hidden declaration() {
 		try {
+			if ($this.match(@([TokenType]::TOKEN_FUN))) { return $this.function("function") }
 			if ($this.match(@([TokenType]::TOKEN_VAR))) { return $this.varDeclaration() }
 			return $this.statement()
 		}
@@ -88,9 +89,9 @@ class Parser {
 
 		if ($null -ne $increment) {
 			$body = [Block]::new(@(
-						$body, 
-						[Expression]::new($increment)
-					))
+					$body, 
+					[Expression]::new($increment)
+				))
 		}
 
 		if ($null -eq $condition) {
@@ -100,9 +101,9 @@ class Parser {
 
 		if ($null -ne $initializer) {
 			$body = [Block]::new(@(
-						$initializer, 
-						$body
-					))
+					$initializer, 
+					$body
+				))
 		}
 
 		return $body
@@ -156,6 +157,24 @@ class Parser {
 			return [Expression]::new($expr)
 		}
 		return [TerminalExpr]::new($expr)
+	}
+
+	[Function] hidden function([string] $kind) {
+		[Token] $name = $this.consume([TokenType]::TOKEN_IDENTIFIER, "Expect $kind name.")
+		$this.consume([TokenType]::TOKEN_LEFT_PAREN, "Expect '(' after $kind name.")
+		[List[Token]] $parameters = [List[Token]]::new()
+		if (!$this.check([TokenType]::TOKEN_RIGHT_PAREN)) {
+			do {
+				if ($parameters.Count -ge 255) {
+					$this.error($this.peek(), "Cannot have more than 255 parameters.")
+				}
+				$parameters.add($this.consume([TokenType]::TOKEN_IDENTIFIER, "Expect parameter name."))
+			} while ($this.match(@([TokenType]::TOKEN_COMMA)))
+		}
+		$this.consume([TokenType]::TOKEN_RIGHT_PAREN, "Expect ')' after parameters.")
+		$this.consume([TokenType]::TOKEN_LEFT_BRACE, "Expect '{' before $kind body.")
+		[List[Stmt]] $body = $this.block()
+		return [Function]::new($name, $parameters, $body)
 	}
 
 	[List[Stmt]] hidden block() {
@@ -304,7 +323,44 @@ class Parser {
 			[Expr] $right = $this.unary()
 			return [Unary]::new($operator, $right)
 		}
-		return $this.primary()
+		return $this.call()
+	}
+
+	[Expr] hidden finishCall([Expr] $callee) {
+		[List[Expr]] $arguments = [List[Expr]]::new()
+		if (!$this.check([TokenType]::TOKEN_RIGHT_PAREN)) {
+			do {
+				if ($arguments.Count -ge 255) {
+					$this.error($this.peek(), "Cannot have more than 255 arguments.")
+				}
+				$argument = $this.expression()
+				if ($argument -is [Binary] -and $argument.operator.type -eq [TokenType]::TOKEN_COMMA) {
+					do {
+						$arguments.add($argument.left)
+						$argument = $argument.right
+					} while ($argument -is [Binary] -and $argument.operator.type -eq [TokenType]::TOKEN_COMMA)
+				}
+				$arguments.add($argument)
+			} while ($this.match(@([TokenType]::TOKEN_COMMA)))
+		}
+	
+		[Token] $paren = $this.consume([TokenType]::TOKEN_RIGHT_PAREN, "Expect ')' after arguments.")
+		return [Call]::new($callee, $paren, $arguments)
+	}
+
+	[Expr] hidden call() {
+		[Expr] $expr = $this.primary()
+	
+		while ($true) {
+			if ($this.match(@([TokenType]::TOKEN_LEFT_PAREN))) {
+				$expr = $this.finishCall($expr)
+			}
+			else {
+				break
+			}
+		}
+	
+		return $expr
 	}
 
 	[Expr] hidden primary() {

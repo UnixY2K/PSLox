@@ -5,12 +5,19 @@ using module ../Lox/Stmt.psm1
 using module ../Lox/Token.psm1
 using module ../Lox/TokenType.psm1
 using module ../Lox/Environment.psm1
+using module ./LoxCallable.psm1
 
 using namespace System.Collections.Generic
 
 class Interpreter: StmtVisitor {
 
-	[Environment] hidden $environment = [Environment]::new()
+	[Environment] hidden $globals = [Environment]::new()
+	[Environment] hidden $environment = $globals
+
+	Interpreter() {
+		$this.environment = $this.globals
+		$this.globals.define("clock", [NativeLoxCallable]::new(0, { [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() }))
+	}
 
 	[void] interpret([List[Stmt]] $Statements) { 
 		try {
@@ -83,6 +90,24 @@ class Interpreter: StmtVisitor {
 						throw [RuntimeError]::new($expr.operator, "operand not supported for binary expression")
 					}
 				} })
+	}
+
+	[Object] visitCallExpr([Call]$expr) {
+		[Object] $callee = $this.evaluate($expr.callee)
+
+		[List[Object]] $arguments = [List[Object]]::new()
+		foreach ($argument in $expr.arguments) {
+			$arguments.Add($this.evaluate($argument))
+		}
+
+		if ($callee -isnot [LoxCallable]) {
+			throw [RuntimeError]::new($expr.paren, "Can only call functions and classes.")
+		}
+		[LoxCallable] $function = $callee -as [LoxCallable]
+		if ($arguments.Count -ne $function.arity()) {
+			throw [RuntimeError]::new($expr.paren, "Expected $($function.arity()) arguments but got $($arguments.Count).")
+		}
+		return $function.call($this, $arguments)
 	}
 
 	[Object] visitGroupingExpr([Grouping]$expr) {
@@ -184,6 +209,11 @@ class Interpreter: StmtVisitor {
 
 	[void] visitExpressionStmt([Expression] $stmt) {
 		$this.evaluate($stmt.expression)
+	}
+
+	[void] visitFunctionStmt([Function] $stmt) {
+		[LoxFunction] $function = [LoxFunction]::new($stmt)
+		$this.environment.define($stmt.name.lexeme, $function)
 	}
 
 	[void] visitIfStmt([If] $stmt) {
