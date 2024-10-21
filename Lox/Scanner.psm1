@@ -82,7 +82,7 @@ class Scanner {
 			}
 			'?' { $this.addToken([TokenType]::TOKEN_QUESTION) }
 			':' { $this.addToken([TokenType]::TOKEN_COLON) }
-			{ $_ -in @(' ', '`r', '`t') } {}
+			{ $_ -in @(" ", "`r", "`t") } {}
 			"`n" { $this.Line += 1 }
 			'"' { $this.string() }
 			{ [Scanner]::isDigit($_) } { $this.number() }
