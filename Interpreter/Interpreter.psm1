@@ -6,6 +6,7 @@ using module ../Lox/Token.psm1
 using module ../Lox/TokenType.psm1
 using module ../Lox/Environment.psm1
 using module ./LoxCallable.psm1
+using module ./Jump.psm1
 
 using namespace System.Collections.Generic
 
@@ -16,14 +17,27 @@ class Interpreter: StmtVisitor {
 
 	Interpreter() {
 		$this.environment = $this.globals
-		$this.globals.define("clock", [NativeLoxCallable]::new(0, { [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() }))
+		$this.globals.define("clock", [NativeLoxCallable]::new(0, { param($interpreter, $arguments) return [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() }))
+		$this.globals.define("mod", [NativeLoxCallable]::new(2, { param($interpreter, $arguments) return $arguments[0] % $arguments[1] }))
 	}
 
 	[void] interpret([List[Stmt]] $Statements) { 
 		try {
-			foreach ($statement in $statements) {
-				$this.execute($statement)
+			try {
+				foreach ($statement in $statements) {
+					$this.execute($statement)
+				}
 			}
+			catch [JumpResultException] {
+				[JumpResultException] $ex = $_.Exception
+				switch ($ex.type) {
+					J_Return { throw [RuntimeError]::new($ex.getToken(), "$($ex.typeToString()) is not inside a function") }
+					J_Continue { throw [RuntimeError]::new($ex.getToken(), "$($ex.typeToString()) is not inside a loop") }
+					J_Break { throw [RuntimeError]::new($ex.getToken(), "$($ex.typeToString()) is not inside control structure") }
+					default { throw [RuntimeError]::new($ex.getToken(), "$($ex.typeToString()) is not a valid jump statement") }
+				}
+			}
+			
 		}
 		catch [RuntimeError] {
 			[Lox]::runtimeError($_.Exception)
@@ -76,6 +90,10 @@ class Interpreter: StmtVisitor {
 					TOKEN_LESS {
 						$this.checkNumberOperands($expr.operator, $left, $right)
 						return ([double]$left) -lt ([double]$right)
+					}
+					TOKEN_LESS_EQUAL {
+						$this.checkNumberOperands($expr.operator, $left, $right)
+						return ([double]$left) -le ([double]$right)
 					}
 					TOKEN_BANG_EQUAL {
 						return !$this.isEqual($left, $right)
@@ -230,6 +248,14 @@ class Interpreter: StmtVisitor {
 		Write-Host $this.stringify($value)
 	}
 
+	[void] visitJumpStmt([Jump] $stmt) {
+		[Object] $value = $null
+		if ($null -ne $stmt.value) {
+			$value = $this.evaluate($stmt.value)
+		}
+		throw [JumpResultException]::new($stmt, $value)
+	}
+
 	[void] visitVarStmt([Var] $stmt) {
 		[Object] $value = [void]
 		if ($null -ne $stmt.initializer) {
@@ -239,8 +265,28 @@ class Interpreter: StmtVisitor {
 	}
 
 	[void] visitWhileStmt([While] $stmt) {
+		[bool] $breakLoop = $false
 		while ($this.isTruthy($this.evaluate($stmt.condition))) {
-			$this.execute($stmt.body)
+			try {
+				$this.execute($stmt.body)
+			}
+			catch [JumpResultException] {
+				[JumpResultException] $ex = $_.Exception
+				# check if the jump is a break or continue
+				switch ($ex.type) {
+					J_Continue {
+						continue
+					}
+					J_Break {
+						$breakLoop = $true
+						break
+					}
+					default {
+						throw $_
+					}
+				}
+			}
+			if ($breakLoop) { break }
 		}
 	}
 

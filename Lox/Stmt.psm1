@@ -10,6 +10,7 @@ class StmtVisitor : ExprVisitor {
 	visitFunctionStmt([Function]$Function) {}
 	visitIfStmt([If]$If) {}
 	visitPrintStmt([Print]$Print) {}
+	visitJumpStmt([Jump]$Jump) {}
 	visitVarStmt([Var]$Var) {}
 	visitWhileStmt([While]$While) {}
 }
@@ -89,6 +90,19 @@ class Print : Stmt {
 	}
 	[Object] accept([StmtVisitor]$Visitor) {
 		return $Visitor.visitPrintStmt($this)
+	}
+}
+
+class Jump : Stmt {
+	[Token] hidden $keyword
+	[Expr] hidden $value
+
+	Jump([Token] $keyword, [Expr] $value) {
+		$this.keyword = $keyword
+		$this.value = $value
+	}
+	[Object] accept([StmtVisitor]$Visitor) {
+		return $Visitor.visitJumpStmt($this)
 	}
 }
 

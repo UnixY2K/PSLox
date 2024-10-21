@@ -53,6 +53,9 @@ class Parser {
 		if ($this.match(@([TokenType]::TOKEN_FOR))) { return $this.forStatement() }
 		if ($this.match(@([TokenType]::TOKEN_IF))) { return $this.ifStatement() }
 		if ($this.match(@([TokenType]::TOKEN_PRINT))) { return $this.printStatement() }
+		if ($this.match(@([TokenType]::TOKEN_RETURN))) { return $this.returnStatement() }
+		if ($this.match(@([TokenType]::TOKEN_CONTINUE))) { return $this.continueStatement() }
+		if ($this.match(@([TokenType]::TOKEN_BREAK))) { return $this.breakStatement() }
 		if ($this.match(@([TokenType]::TOKEN_WHILE))) { return $this.whileStatement() }
 		if ($this.match(@([TokenType]::TOKEN_LEFT_BRACE))) { return [Block]::new($this.block()) }
 	
@@ -127,6 +130,28 @@ class Parser {
 		[Expr] $value = $this.expression()
 		$this.consume([TokenType]::TOKEN_SEMICOLON, "Expect ';' after value.")
 		return [Print]::new($value)
+	}
+
+	[Stmt] hidden returnStatement() {
+		[Token] $keyword = $this.previous()
+		[Expr] $value = $null
+		if (!$this.check([TokenType]::TOKEN_SEMICOLON)) {
+			$value = $this.expression()
+		}
+		$this.consume([TokenType]::TOKEN_SEMICOLON, "Expect ';' after return value.")
+		return [Jump]::new($keyword, $value)
+	}
+
+	[Stmt] hidden continueStatement() {
+		[Token] $keyword = $this.previous()
+		$this.consume([TokenType]::TOKEN_SEMICOLON, "Expect ';' after continue.")
+		return [Jump]::new($keyword, $null)
+	}
+
+	[Stmt] hidden breakStatement() {
+		[Token] $keyword = $this.previous()
+		$this.consume([TokenType]::TOKEN_SEMICOLON, "Expect ';' after break.")
+		return [Jump]::new($keyword, $null)
 	}
 
 	[Stmt] hidden whileStatement() {

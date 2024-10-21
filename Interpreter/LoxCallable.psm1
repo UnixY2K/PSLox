@@ -1,5 +1,7 @@
 using module .\Interpreter.psm1
+using module .\Jump.psm1
 using module ..\Lox\Stmt.psm1
+using module ..\Lox\RuntimeError.psm1
 
 
 using namespace System.Collections.Generic
@@ -29,7 +31,18 @@ class LoxFunction: LoxCallable {
 			$environment.define($this.declaration.params[$i].lexeme, $arguments[$i])
 		}
 		
-		$interpreter.executeBlock($this.declaration.body, $environment)
+		try {
+			return $interpreter.executeBlock($this.declaration.body, $environment)
+		}
+		catch [JumpResultException] {
+			[JumpResultException] $ex = $_.Exception
+			switch ($ex.type) {
+				J_Return { return $ex.value }
+				J_Continue { throw [RuntimeError]::new($ex.getToken(), "$($ex.typeToString()) is not inside a loop") }
+				J_Break { throw [RuntimeError]::new($ex.getToken(), "$($ex.typeToString()) is not inside control structure") }
+				default { throw [RuntimeError]::new($ex.getToken(), "$($ex.typeToString()) is not a valid jump statement") }
+			}
+		}
 		return $null
 	}
 
@@ -39,18 +52,18 @@ class LoxFunction: LoxCallable {
 }
 
 class NativeLoxCallable: LoxCallable {
-	[int] $arity = 0
-	[scriptblock] $functionBlock = {}
+	[int] hidden $m_arity = 0
+	[scriptblock] $m_functionBlock = {}
 	
 	NativeLoxCallable([int] $arity, [scriptblock]$functionBlock) {
-		$this.functionBlock = $functionBlock
-		$this.arity = $arity
+		$this.m_functionBlock = $functionBlock
+		$this.m_arity = $arity
 	}
 
-	[int] arity() { return $this.arity }
+	[int] arity() { return $this.m_arity }
 	[Object] call([Interpreter]$interpreter, [List[Object]]$arguments) {
-		if ($null -ne $this.functionBlock) {
-			return $this.functionBlock.Invoke($interpreter, $arguments)
+		if ($null -ne $this.m_functionBlock) {
+			return Invoke-Command -ScriptBlock $this.m_functionBlock -ArgumentList $interpreter, $arguments
 		}
 		return $null
 	}

@@ -156,6 +156,7 @@ defineAst $outputDir "Stmt" @("Expr.psm1", "Token.psm1") @("System.Collections.G
 	"Function		: Token name, List[Token] params, List[Stmt] body",
 	"If				: Expr condition, Stmt thenBranch, Stmt elseBranch",
 	"Print			: Expr expression",
+	"Jump			: Token keyword, Expr value",
 	"Var			: Token name, Expr initializer",
 	"While			: Expr condition, Stmt body"
 )
