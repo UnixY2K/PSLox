@@ -48,6 +48,8 @@ enum TokenType {
     TOKEN_TRUE
     TOKEN_VAR
     TOKEN_WHILE
+	TOKEN_CONTINUE
+	TOKEN_BREAK
   
     TOKEN_EOF
 }
