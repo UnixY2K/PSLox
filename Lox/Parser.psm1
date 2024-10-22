@@ -1,7 +1,7 @@
 using module .\Token.psm1
 using module .\TokenType.psm1
-using module .\Expr.psm1
 using module .\Stmt.psm1
+using module .\Expr.psm1
 using module .\Lox.psm1
 
 using namespace System.Collections.Generic
@@ -406,7 +406,30 @@ class Parser {
 			$this.consume([TokenType]::TOKEN_RIGHT_PAREN, "Expect ')' after expression.")
 			return [Grouping]::new($expr)
 		}
+
+		# lambda expression starts with 'fun'
+		if($this.match(@([TokenType]::TOKEN_FUN))) {
+			return $this.lambda()
+		}
+
 		throw $this.error($this.peek(), "Expect expression.")
+	}
+
+	[Expr] hidden lambda() {
+		$this.consume([TokenType]::TOKEN_LEFT_PAREN, "Expect '(' after 'fun'.")
+		[List[Token]] $parameters = [List[Token]]::new()
+		if (!$this.check([TokenType]::TOKEN_RIGHT_PAREN)) {
+			do {
+				if ($parameters.Count -ge 255) {
+					$this.error($this.peek(), "Cannot have more than 255 parameters.")
+				}
+				$parameters.add($this.consume([TokenType]::TOKEN_IDENTIFIER, "Expect parameter name."))
+			} while ($this.match(@([TokenType]::TOKEN_COMMA)))
+		}
+		$this.consume([TokenType]::TOKEN_RIGHT_PAREN, "Expect ')' after parameters.")
+		$this.consume([TokenType]::TOKEN_LEFT_BRACE, "Expect '{' before lambda body.")
+		[List[Stmt]] $body = $this.block()
+		return [Lambda]::new($parameters, $body)
 	}
 	
 

@@ -171,6 +171,11 @@ class Interpreter: StmtVisitor {
 		return $this.environment.get($expr.name)
 	}
 
+	[Object] visitLambdaExpr([Lambda]$expr) {
+		[Function] $function = [Function]::new($null, $expr.params, $expr.body)
+		return [LoxFunction]::new($function, $this.environment)
+	}
+
 	[boolean] hidden isTruthy([Object] $object) {
 		if ($null -eq $object) { return $false }
 		if ($object -is ([boolean])) { return [boolean]$object }

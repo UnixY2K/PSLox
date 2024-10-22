@@ -1,5 +1,5 @@
-using module .\Expr.psm1
 using module .\Token.psm1
+using module .\Expr.psm1
 using namespace System.Collections.Generic
 
 

@@ -137,7 +137,7 @@ function defineVisitor(
 	$writer.WriteLine("}`n")
 }
 
-defineAst $outputDir "Expr" @("Token.psm1") @() @(
+defineAst $outputDir "Expr" @("Token.psm1") @("System.Collections.Generic") @(
 	"Ternary		: Expr cond, Expr left, Expr right",
 	"Assign			: Token name, Expr value",
 	"Binary			: Expr left, Token operator, Expr right",
@@ -146,10 +146,11 @@ defineAst $outputDir "Expr" @("Token.psm1") @() @(
 	"Literal		: Object value",
 	"Logical		: Expr left, Token operator, Expr right",
 	"Unary			: Token operator, Expr right",
-	"Variable		: Token name"
+	"Variable		: Token name",
+	"Lambda			: List[Token] params, List[Stmt] body"
 )
 
-defineAst $outputDir "Stmt" @("Expr.psm1", "Token.psm1") @("System.Collections.Generic") @(
+defineAst $outputDir "Stmt" @("Token.psm1", "Expr.psm1") @("System.Collections.Generic") @(
 	"Block			: List[Stmt] statements",
 	"TerminalExpr	: Expr expression",
 	"Expression		: Expr expression",

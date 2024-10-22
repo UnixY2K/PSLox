@@ -39,6 +39,7 @@ class LoxFunction: LoxCallable {
 	}
 
 	[string] ToString() {
+		if ($null -eq $this.declaration.name) { return "<lambda fn>" }
 		return "<fn $($this.declaration.name.lexeme)>"
 	}
 }

@@ -1,7 +1,6 @@
 using module .\Token.psm1
-
-
 using namespace System.Collections.Generic
+
 
 class ExprVisitor {
 	visitTernaryExpr([Ternary]$Ternary) {}
@@ -13,6 +12,7 @@ class ExprVisitor {
 	visitLogicalExpr([Logical]$Logical) {}
 	visitUnaryExpr([Unary]$Unary) {}
 	visitVariableExpr([Variable]$Variable) {}
+	visitLambdaExpr([Lambda]$Lambda) {}
 }
 
 class Expr {
@@ -135,6 +135,19 @@ class Variable : Expr {
 	}
 	[Object] accept([ExprVisitor]$Visitor) {
 		return $Visitor.visitVariableExpr($this)
+	}
+}
+
+class Lambda : Expr {
+	[List[Token]] hidden $params
+	[List[Stmt]] hidden $body
+
+	Lambda([List[Token]] $params, [List[Stmt]] $body) {
+		$this.params = $params
+		$this.body = $body
+	}
+	[Object] accept([ExprVisitor]$Visitor) {
+		return $Visitor.visitLambdaExpr($this)
 	}
 }
 
