@@ -8,15 +8,17 @@ using namespace System.Collections.Generic
 
 class LoxFunction: LoxCallable {
 	[Function] hidden $declaration = $null
+	[Environment] hidden $closure = $null
 
-	LoxFunction([Function]$declaration) {
+	LoxFunction([Function]$declaration, [Environment]$closure) {
 		$this.declaration = $declaration
+		$this.closure = $closure
 	}
 
 	[int] arity() { return $this.declaration.params.Count }
 
 	[Object] call([Interpreter]$interpreter, [List[Object]]$arguments) {
-		[Environment] $environment = [Environment]::new($interpreter.globals)
+		[Environment] $environment = [Environment]::new($this.closure)
 		for ($i = 0; $i -lt $this.declaration.params.Count; $i++) {
 			$environment.define($this.declaration.params[$i].lexeme, $arguments[$i])
 		}

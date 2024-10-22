@@ -232,7 +232,7 @@ class Interpreter: StmtVisitor {
 	}
 
 	[void] visitFunctionStmt([Function] $stmt) {
-		[LoxFunction] $function = [LoxFunction]::new($stmt)
+		[LoxFunction] $function = [LoxFunction]::new($stmt, $this.environment)
 		$this.environment.define($stmt.name.lexeme, $function)
 	}
 
