@@ -1,6 +1,7 @@
 using module ..\Lox\Stmt.psm1
 using module ..\Lox\RuntimeError.psm1
 using module ..\Lox\Token.psm1
+using module .\Jump.psm1
 
 enum JumpType {
 	J_Return

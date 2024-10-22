@@ -6,6 +6,8 @@ using module ../Lox/Token.psm1
 using module ../Lox/TokenType.psm1
 using module ../Lox/Environment.psm1
 using module ./LoxCallable.psm1
+using module ./LoxNativeFunction.psm1
+using module ./LoxFunction.psm1
 using module ./Jump.psm1
 
 using namespace System.Collections.Generic
@@ -17,8 +19,8 @@ class Interpreter: StmtVisitor {
 
 	Interpreter() {
 		$this.environment = $this.globals
-		$this.globals.define("clock", [NativeLoxCallable]::new(0, { param($interpreter, $arguments) return [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() }))
-		$this.globals.define("mod", [NativeLoxCallable]::new(2, { param($interpreter, $arguments) return $arguments[0] % $arguments[1] }))
+		$this.globals.define("clock", [LoxNativeFunction]::new(0, { param($interpreter, $arguments) return [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() }))
+		$this.globals.define("mod", [LoxNativeFunction]::new(2, { param($interpreter, $arguments) return $arguments[0] % $arguments[1] }))
 	}
 
 	[void] interpret([List[Stmt]] $Statements) { 

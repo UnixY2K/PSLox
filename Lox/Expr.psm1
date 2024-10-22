@@ -1,6 +1,8 @@
 using module .\Token.psm1
 
 
+using namespace System.Collections.Generic
+
 class ExprVisitor {
 	visitTernaryExpr([Ternary]$Ternary) {}
 	visitAssignExpr([Assign]$Assign) {}
