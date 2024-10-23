@@ -47,7 +47,23 @@ class Environment {
 		throw [RuntimeError]::new($name, "Undefined variable '$($name.lexeme)'.")
 	}
 
-	[void] define([string] $name, [object]$value) {
+	[void] defineValue([string] $name, [object]$value) {
 		$this.values[$name] = $value
+	}
+
+	[Environment] ancestor([int] $distance) {
+		$environment = $this
+		for ($i = 0; $i -lt $distance; $i++) {
+			$environment = $environment.enclosing
+		}
+		return $environment
+	}
+
+	[Object] getAt([int] $distance, [string] $name) {
+		return $this.ancestor($distance).values[$name]
+	}
+
+	[void] assignAt([int] $distance, [Token] $name, [object] $value) {
+		$this.ancestor($distance).values[$name.lexeme] = $value
 	}
 }

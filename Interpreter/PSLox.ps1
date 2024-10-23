@@ -4,6 +4,7 @@ using module ..\Lox\Lox.psm1
 using module ..\Lox\AstPrinter.psm1
 using module ..\Lox\Parser.psm1
 using module .\Interpreter.psm1
+using module .\Resolver.psm1
 
 using namespace System.Collections.Generic
 
@@ -36,6 +37,12 @@ function run([string]$source, [Interpreter]$interpreter = [Interpreter]::new(), 
 	if ($showAST) {
 		Write-host "#>AST>#" ([AstPrinter]::new()).print($expression)
 	}
+	[Resolver] $resolver = [Resolver]::new($interpreter)
+	$resolver.resolve($statements)
+
+	# Stop if there was a resolution error.
+	if ([Lox]::hadError) { return }
+
 	$interpreter.interpret($statements)
 }
 

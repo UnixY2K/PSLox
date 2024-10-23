@@ -16,11 +16,12 @@ class Interpreter: StmtVisitor {
 
 	[Environment] hidden $globals = [Environment]::new()
 	[Environment] hidden $environment = $globals
+	[Dictionary[Expr, int]] hidden $locals = [Dictionary[Expr, int]]::new()
 
 	Interpreter() {
 		$this.environment = $this.globals
-		$this.globals.define("clock", [LoxNativeFunction]::new(0, { param($interpreter, $arguments) return [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() }))
-		$this.globals.define("mod", [LoxNativeFunction]::new(2, { param($interpreter, $arguments) return $arguments[0] % $arguments[1] }))
+		$this.globals.defineValue("clock", [LoxNativeFunction]::new(0, { param($interpreter, $arguments) return [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() }))
+		$this.globals.defineValue("mod", [LoxNativeFunction]::new(2, { param($interpreter, $arguments) return $arguments[0] % $arguments[1] }))
 	}
 
 	[void] interpret([List[Stmt]] $Statements) { 
@@ -168,7 +169,16 @@ class Interpreter: StmtVisitor {
 	}
 
 	[Object] visitVariableExpr([Variable]$expr) {
-		return $this.environment.get($expr.name)
+		return $this.lookupVariable($expr.name, $expr)
+	}
+
+	[Object] hidden lookUpVariable([Token] $name, [Expr] $expr) {
+		if ($this.locals.ContainsKey($expr)) {
+			[int] $distance = $this.locals[$expr]
+			return $this.environment.getAt($distance, $name.lexeme)
+		}
+		# TODO: check for the runtime error in java
+		return $this.globals.get($name)
 	}
 
 	[Object] visitLambdaExpr([Lambda]$expr) {
@@ -208,6 +218,10 @@ class Interpreter: StmtVisitor {
 		$stmt.accept($this)
 	}
 
+	[void] resolve([Expr] $expr, [int] $depth) {
+		$this.locals[$expr] = $depth
+	}
+
 	[void] executeBlock([List[Stmt]] $statements, [Environment] $environment) {
 		[Environment] $previous = $this.environment
 		try {
@@ -238,7 +252,7 @@ class Interpreter: StmtVisitor {
 
 	[void] visitFunctionStmt([Function] $stmt) {
 		[LoxFunction] $function = [LoxFunction]::new($stmt, $this.environment)
-		$this.environment.define($stmt.name.lexeme, $function)
+		$this.environment.defineValue($stmt.name.lexeme, $function)
 	}
 
 	[void] visitIfStmt([If] $stmt) {
@@ -268,7 +282,7 @@ class Interpreter: StmtVisitor {
 		if ($null -ne $stmt.initializer) {
 			$value = $this.evaluate($stmt.initializer)
 		}
-		$this.environment.define($stmt.name.lexeme, $value)
+		$this.environment.defineValue($stmt.name.lexeme, $value)
 	}
 
 	[void] visitWhileStmt([While] $stmt) {
@@ -299,7 +313,15 @@ class Interpreter: StmtVisitor {
 
 	[object] hidden visitAssignExpr([Assign] $expr) {
 		[Object] $value = $this.evaluate($expr.value)
-		$this.environment.assign($expr.name, $value)
+	
+		if ($this.locals.ContainsKey($expr)) {
+			[int] $distance = $this.locals[$expr]
+			$this.environment.assignAt($distance, $expr.name, $value)
+		}
+		else {
+			$this.globals.assign($expr.name, $value)
+		}
+
 		return $value
 	}
 
@@ -310,4 +332,5 @@ class Interpreter: StmtVisitor {
 		}
 		return $object.toString()
 	}
+
 }

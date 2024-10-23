@@ -20,7 +20,7 @@ class LoxFunction: LoxCallable {
 	[Object] call([Interpreter]$interpreter, [List[Object]]$arguments) {
 		[Environment] $environment = [Environment]::new($this.closure)
 		for ($i = 0; $i -lt $this.declaration.params.Count; $i++) {
-			$environment.define($this.declaration.params[$i].lexeme, $arguments[$i])
+			$environment.defineValue($this.declaration.params[$i].lexeme, $arguments[$i])
 		}
 		
 		try {
