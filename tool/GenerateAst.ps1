@@ -90,7 +90,7 @@ function defineType(
 	$sb = [System.Text.StringBuilder]::new()
 	[void]$sb.AppendLine("class $($class.Name) : $baseName {")
 	foreach ($field in $class.fields) {
-		[void]$sb.AppendLine("`t[$($field.Type)] hidden `$$($field.Name)")
+		[void]$sb.AppendLine("`t[$($field.Type)] `$$($field.Name)")
 	}
 	[void]$sb.AppendLine("")
 
@@ -142,9 +142,12 @@ defineAst $outputDir "Expr" @("Token.psm1") @("System.Collections.Generic") @(
 	"Assign			: Token name, Expr value",
 	"Binary			: Expr left, Token operator, Expr right",
 	"Call			: Expr callee, Token paren, List[Expr] arguments",
+	"Get			: Expr object, Token name",
 	"Grouping		: Expr expression",
 	"Literal		: Object value",
 	"Logical		: Expr left, Token operator, Expr right",
+	"Set			: Expr object, Token name, Expr value",
+	"Thiz			: Token keyword",
 	"Unary			: Token operator, Expr right",
 	"Variable		: Token name",
 	"Lambda			: List[Token] params, List[Stmt] body"
@@ -152,6 +155,7 @@ defineAst $outputDir "Expr" @("Token.psm1") @("System.Collections.Generic") @(
 
 defineAst $outputDir "Stmt" @("Token.psm1", "Expr.psm1") @("System.Collections.Generic") @(
 	"Block			: List[Stmt] statements",
+	"Class			: Token name, List[Function] methods",
 	"TerminalExpr	: Expr expression",
 	"Expression		: Expr expression",
 	"Function		: Token name, List[Token] params, List[Stmt] body",

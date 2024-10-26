@@ -10,12 +10,19 @@ using namespace System.Collections.Generic
 enum FunctionType {
 	NONE
 	FUNCTION
+	METHOD
+}
+
+enum ClassType {
+	NONE
+	CLASS
 }
 
 class Resolver: StmtVisitor {
 	[Interpreter] hidden $interpreter
 	[Stack[Dictionary[string, bool]]] hidden $scopes = [Stack[Dictionary[string, bool]]]::new()
 	[FunctionType] hidden $currentFunction = [FunctionType]::NONE
+	[ClassType] hidden $currentClass = [ClassType]::NONE
 
 	Resolver([Interpreter] $interpreter) {
 		$this.interpreter = $interpreter
@@ -40,8 +47,8 @@ class Resolver: StmtVisitor {
 		$this.currentFunction = $type
 		$this.beginScope()
 		foreach ($param in $function.params) {
-			$this.declareScope($param.lexeme)
-			$this.defineScope($param.lexeme)
+			$this.declareScope($param)
+			$this.defineScope($param)
 		}
 		$this.resolve($function.body)
 		$this.endScope()
@@ -51,8 +58,8 @@ class Resolver: StmtVisitor {
 	[void] hidden resolveLambda([Lambda] $lambda) {
 		$this.beginScope()
 		foreach ($param in $lambda.params) {
-			$this.declareScope($param.lexeme)
-			$this.defineScope($param.lexeme)
+			$this.declareScope($param)
+			$this.defineScope($param)
 		}
 		$this.resolve($lambda.body)
 		$this.endScope()
@@ -66,30 +73,33 @@ class Resolver: StmtVisitor {
 		$this.scopes.Pop()
 	}
 
-	[void] hidden declareScope([string] $name) {
+	[void] hidden declareScope([Token] $name) {
 		if ($this.scopes.Count -eq 0) {
 			return
 		}
 
-		if ($this.scopes.Peek().ContainsKey($name)) {
+		if ($this.scopes.Peek().ContainsKey($name.lexeme)) {
 			[Lox]::error($name, "Variable with this name already declared in this scope.")
 		}
 
 		$scope = $this.scopes.Peek()
-		$scope[$name] = $false
+		$scope[$name.lexeme] = $false
 	}
 
-	[void] hidden defineScope([string] $name) {
+	[void] hidden defineScope([Token] $name) {
 		if ($this.scopes.Count -eq 0) {
 			return
 		}
-		$this.scopes.Peek()[$name] = $true
+		$this.scopes.Peek()[$name.lexeme] = $true
 	}
 
 	[void] hidden resolveLocal([Expr] $expr, [Token] $name) {
-		for ($i = $this.scopes.Count - 1; $i -ge 0; $i--) {
-			if ($this.scopes.ToArray()[$i].ContainsKey($name.lexeme)) {
-				$this.interpreter.resolve($expr, $this.scopes.Count - 1 - $i)
+		$scopesA = $this.scopes.ToArray()
+		# we need to get the array in powershell 
+		# as is in LIFO order we do not iterate in reverse
+		for ($i = 0; $i -lt $scopesA.Count; $i++) {
+			if ($scopesA[$i].ContainsKey($name.lexeme)) {
+				$this.interpreter.resolve($expr, $i)
 				return
 			}
 		}
@@ -101,6 +111,25 @@ class Resolver: StmtVisitor {
 		$this.endScope()
 	}
 
+	[void] visitClassStmt([Class] $stmt) {
+		[ClassType] $enclosingClass = $this.currentClass
+		$this.currentClass = [ClassType]::CLASS
+
+		$this.declareScope($stmt.name)
+		$this.defineScope($stmt.name)
+
+		$this.beginScope()
+		$this.scopes.Peek()["this"] = $true
+
+		foreach ($method in $stmt.methods) {
+			$declaration = [FunctionType]::METHOD
+			$this.resolveFunction($method, $declaration)
+		}
+
+		$this.endScope()
+		$this.currentClass = $enclosingClass
+	}
+
 	[void] visitTerminalExprStmt([TerminalExpr] $stmt) {
 		$this.resolve($stmt.expression)
 	}
@@ -110,8 +139,8 @@ class Resolver: StmtVisitor {
 	}
 
 	[void] visitFunctionStmt([Function] $stmt) {
-		$this.declareScope($stmt.name.lexeme)
-		$this.defineScope($stmt.name.lexeme)
+		$this.declareScope($stmt.name)
+		$this.defineScope($stmt.name)
 		$this.resolveFunction($stmt, [FunctionType]::FUNCTION)
 	}
 
@@ -183,6 +212,10 @@ class Resolver: StmtVisitor {
 		}
 	}
 
+	[void] visitGetExpr([Get] $expr) {
+		$this.resolve($expr.object)
+	}
+
 	[void] visitGroupingExpr([Grouping] $expr) {
 		$this.resolve($expr.expression)
 	}
@@ -193,6 +226,20 @@ class Resolver: StmtVisitor {
 	[void] visitLogicalExpr([Logical] $expr) {
 		$this.resolve($expr.left)
 		$this.resolve($expr.right)
+	}
+
+	[void] visitSetExpr([Set] $expr) {
+		$this.resolve($expr.value)
+		$this.resolve($expr.object)
+	}
+
+	[void] visitThizExpr([Thiz] $expr) {
+		if ($this.currentClass -eq [ClassType]::NONE) {
+			[Lox]::error($expr.keyword, "Cannot use 'this' outside of a class.")
+			return
+		}
+
+		$this.resolveLocal($expr, $expr.keyword)
 	}
 
 	[void] visitUnaryExpr([Unary] $expr) {

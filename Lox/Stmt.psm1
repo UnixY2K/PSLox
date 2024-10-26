@@ -5,6 +5,7 @@ using namespace System.Collections.Generic
 
 class StmtVisitor : ExprVisitor {
 	visitBlockStmt([Block]$Block) {}
+	visitClassStmt([Class]$Class) {}
 	visitTerminalExprStmt([TerminalExpr]$TerminalExpr) {}
 	visitExpressionStmt([Expression]$Expression) {}
 	visitFunctionStmt([Function]$Function) {}
@@ -20,7 +21,7 @@ class Stmt {
 }
 
 class Block : Stmt {
-	[List[Stmt]] hidden $statements
+	[List[Stmt]] $statements
 
 	Block([List[Stmt]] $statements) {
 		$this.statements = $statements
@@ -30,8 +31,21 @@ class Block : Stmt {
 	}
 }
 
+class Class : Stmt {
+	[Token] $name
+	[List[Function]] $methods
+
+	Class([Token] $name, [List[Function]] $methods) {
+		$this.name = $name
+		$this.methods = $methods
+	}
+	[Object] accept([StmtVisitor]$Visitor) {
+		return $Visitor.visitClassStmt($this)
+	}
+}
+
 class TerminalExpr : Stmt {
-	[Expr] hidden $expression
+	[Expr] $expression
 
 	TerminalExpr([Expr] $expression) {
 		$this.expression = $expression
@@ -42,7 +56,7 @@ class TerminalExpr : Stmt {
 }
 
 class Expression : Stmt {
-	[Expr] hidden $expression
+	[Expr] $expression
 
 	Expression([Expr] $expression) {
 		$this.expression = $expression
@@ -53,9 +67,9 @@ class Expression : Stmt {
 }
 
 class Function : Stmt {
-	[Token] hidden $name
-	[List[Token]] hidden $params
-	[List[Stmt]] hidden $body
+	[Token] $name
+	[List[Token]] $params
+	[List[Stmt]] $body
 
 	Function([Token] $name, [List[Token]] $params, [List[Stmt]] $body) {
 		$this.name = $name
@@ -68,9 +82,9 @@ class Function : Stmt {
 }
 
 class If : Stmt {
-	[Expr] hidden $condition
-	[Stmt] hidden $thenBranch
-	[Stmt] hidden $elseBranch
+	[Expr] $condition
+	[Stmt] $thenBranch
+	[Stmt] $elseBranch
 
 	If([Expr] $condition, [Stmt] $thenBranch, [Stmt] $elseBranch) {
 		$this.condition = $condition
@@ -83,7 +97,7 @@ class If : Stmt {
 }
 
 class Print : Stmt {
-	[Expr] hidden $expression
+	[Expr] $expression
 
 	Print([Expr] $expression) {
 		$this.expression = $expression
@@ -94,8 +108,8 @@ class Print : Stmt {
 }
 
 class Jump : Stmt {
-	[Token] hidden $keyword
-	[Expr] hidden $value
+	[Token] $keyword
+	[Expr] $value
 
 	Jump([Token] $keyword, [Expr] $value) {
 		$this.keyword = $keyword
@@ -107,8 +121,8 @@ class Jump : Stmt {
 }
 
 class Var : Stmt {
-	[Token] hidden $name
-	[Expr] hidden $initializer
+	[Token] $name
+	[Expr] $initializer
 
 	Var([Token] $name, [Expr] $initializer) {
 		$this.name = $name
@@ -120,8 +134,8 @@ class Var : Stmt {
 }
 
 class While : Stmt {
-	[Expr] hidden $condition
-	[Stmt] hidden $body
+	[Expr] $condition
+	[Stmt] $body
 
 	While([Expr] $condition, [Stmt] $body) {
 		$this.condition = $condition

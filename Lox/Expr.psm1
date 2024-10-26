@@ -7,9 +7,12 @@ class ExprVisitor {
 	visitAssignExpr([Assign]$Assign) {}
 	visitBinaryExpr([Binary]$Binary) {}
 	visitCallExpr([Call]$Call) {}
+	visitGetExpr([Get]$Get) {}
 	visitGroupingExpr([Grouping]$Grouping) {}
 	visitLiteralExpr([Literal]$Literal) {}
 	visitLogicalExpr([Logical]$Logical) {}
+	visitSetExpr([Set]$Set) {}
+	visitThizExpr([Thiz]$Thiz) {}
 	visitUnaryExpr([Unary]$Unary) {}
 	visitVariableExpr([Variable]$Variable) {}
 	visitLambdaExpr([Lambda]$Lambda) {}
@@ -20,9 +23,9 @@ class Expr {
 }
 
 class Ternary : Expr {
-	[Expr] hidden $cond
-	[Expr] hidden $left
-	[Expr] hidden $right
+	[Expr] $cond
+	[Expr] $left
+	[Expr] $right
 
 	Ternary([Expr] $cond, [Expr] $left, [Expr] $right) {
 		$this.cond = $cond
@@ -35,8 +38,8 @@ class Ternary : Expr {
 }
 
 class Assign : Expr {
-	[Token] hidden $name
-	[Expr] hidden $value
+	[Token] $name
+	[Expr] $value
 
 	Assign([Token] $name, [Expr] $value) {
 		$this.name = $name
@@ -48,9 +51,9 @@ class Assign : Expr {
 }
 
 class Binary : Expr {
-	[Expr] hidden $left
-	[Token] hidden $operator
-	[Expr] hidden $right
+	[Expr] $left
+	[Token] $operator
+	[Expr] $right
 
 	Binary([Expr] $left, [Token] $operator, [Expr] $right) {
 		$this.left = $left
@@ -63,9 +66,9 @@ class Binary : Expr {
 }
 
 class Call : Expr {
-	[Expr] hidden $callee
-	[Token] hidden $paren
-	[List[Expr]] hidden $arguments
+	[Expr] $callee
+	[Token] $paren
+	[List[Expr]] $arguments
 
 	Call([Expr] $callee, [Token] $paren, [List[Expr]] $arguments) {
 		$this.callee = $callee
@@ -77,8 +80,21 @@ class Call : Expr {
 	}
 }
 
+class Get : Expr {
+	[Expr] $object
+	[Token] $name
+
+	Get([Expr] $object, [Token] $name) {
+		$this.object = $object
+		$this.name = $name
+	}
+	[Object] accept([ExprVisitor]$Visitor) {
+		return $Visitor.visitGetExpr($this)
+	}
+}
+
 class Grouping : Expr {
-	[Expr] hidden $expression
+	[Expr] $expression
 
 	Grouping([Expr] $expression) {
 		$this.expression = $expression
@@ -89,7 +105,7 @@ class Grouping : Expr {
 }
 
 class Literal : Expr {
-	[Object] hidden $value
+	[Object] $value
 
 	Literal([Object] $value) {
 		$this.value = $value
@@ -100,9 +116,9 @@ class Literal : Expr {
 }
 
 class Logical : Expr {
-	[Expr] hidden $left
-	[Token] hidden $operator
-	[Expr] hidden $right
+	[Expr] $left
+	[Token] $operator
+	[Expr] $right
 
 	Logical([Expr] $left, [Token] $operator, [Expr] $right) {
 		$this.left = $left
@@ -114,9 +130,35 @@ class Logical : Expr {
 	}
 }
 
+class Set : Expr {
+	[Expr] $object
+	[Token] $name
+	[Expr] $value
+
+	Set([Expr] $object, [Token] $name, [Expr] $value) {
+		$this.object = $object
+		$this.name = $name
+		$this.value = $value
+	}
+	[Object] accept([ExprVisitor]$Visitor) {
+		return $Visitor.visitSetExpr($this)
+	}
+}
+
+class Thiz : Expr {
+	[Token] $keyword
+
+	Thiz([Token] $keyword) {
+		$this.keyword = $keyword
+	}
+	[Object] accept([ExprVisitor]$Visitor) {
+		return $Visitor.visitThizExpr($this)
+	}
+}
+
 class Unary : Expr {
-	[Token] hidden $operator
-	[Expr] hidden $right
+	[Token] $operator
+	[Expr] $right
 
 	Unary([Token] $operator, [Expr] $right) {
 		$this.operator = $operator
@@ -128,7 +170,7 @@ class Unary : Expr {
 }
 
 class Variable : Expr {
-	[Token] hidden $name
+	[Token] $name
 
 	Variable([Token] $name) {
 		$this.name = $name
@@ -139,8 +181,8 @@ class Variable : Expr {
 }
 
 class Lambda : Expr {
-	[List[Token]] hidden $params
-	[List[Stmt]] hidden $body
+	[List[Token]] $params
+	[List[Stmt]] $body
 
 	Lambda([List[Token]] $params, [List[Stmt]] $body) {
 		$this.params = $params

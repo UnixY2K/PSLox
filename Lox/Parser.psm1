@@ -39,6 +39,7 @@ class Parser {
 
 	[Stmt] hidden declaration() {
 		try {
+			if ($this.match(@([TokenType]::TOKEN_CLASS))) { return $this.classDeclaration() }
 			if ($this.match(@([TokenType]::TOKEN_FUN))) { return $this.function("function") }
 			if ($this.match(@([TokenType]::TOKEN_VAR))) { return $this.varDeclaration() }
 			return $this.statement()
@@ -47,6 +48,20 @@ class Parser {
 			$this.synchronize()
 			return $null
 		}
+	}
+
+	[Stmt] hidden classDeclaration() {
+		[Token] $name = $this.consume([TokenType]::TOKEN_IDENTIFIER, "Expect class name.")
+		
+		$this.consume([TokenType]::TOKEN_LEFT_BRACE, "Expect '{' before class body.")
+
+		[List[Function]] $methods = [List[Function]]::new()
+		while (!$this.check([TokenType]::TOKEN_RIGHT_BRACE) -and !$this.isAtEnd()) {
+			$methods.add($this.function("method"))
+		}
+
+		$this.consume([TokenType]::TOKEN_RIGHT_BRACE, "Expect '}' after class body.")
+		return [Class]::new($name, $methods)
 	}
 
 	[Stmt] hidden statement() {
@@ -240,6 +255,10 @@ class Parser {
 				[Token] $name = $expr.name
 				return [Assign]::new($name, $value)
 			}
+			elseif ($expr -is [Get]) {
+				[Get] $get = $expr -as [Get]
+				return [Set]::new($get.object, $get.name, $value)
+			}
 			$this.error($equals, "Invalid assignment target.")
 		}
 
@@ -380,6 +399,10 @@ class Parser {
 			if ($this.match(@([TokenType]::TOKEN_LEFT_PAREN))) {
 				$expr = $this.finishCall($expr)
 			}
+			elseif ($this.match(@([TokenType]::TOKEN_DOT))) {
+				[Token] $name = $this.consume([TokenType]::TOKEN_IDENTIFIER, "Expect property name after '.'.")
+				$expr = [Get]::new($expr, $name)
+			}
 			else {
 				break
 			}
@@ -397,6 +420,10 @@ class Parser {
 			return [Literal]::new($this.previous().literal)
 		}
 
+		if ($this.match(@([TokenType]::TOKEN_THIS))) {
+			return [Thiz]::new($this.previous())
+		}
+
 		if ($this.match(@([TokenType]::TOKEN_IDENTIFIER))) {
 			return [Variable]::new($this.previous())
 		}
@@ -408,7 +435,7 @@ class Parser {
 		}
 
 		# lambda expression starts with 'fun'
-		if($this.match(@([TokenType]::TOKEN_FUN))) {
+		if ($this.match(@([TokenType]::TOKEN_FUN))) {
 			return $this.lambda()
 		}
 

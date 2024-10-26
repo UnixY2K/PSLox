@@ -8,6 +8,8 @@ using module ../Lox/Environment.psm1
 using module ./LoxCallable.psm1
 using module ./LoxNativeFunction.psm1
 using module ./LoxFunction.psm1
+using module ./LoxInstance.psm1
+using module ./LoxClass.psm1
 using module ./Jump.psm1
 
 using namespace System.Collections.Generic
@@ -21,7 +23,6 @@ class Interpreter: StmtVisitor {
 	Interpreter() {
 		$this.environment = $this.globals
 		$this.globals.defineValue("clock", [LoxNativeFunction]::new(0, { param($interpreter, $arguments) return [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() }))
-		$this.globals.defineValue("mod", [LoxNativeFunction]::new(2, { param($interpreter, $arguments) return $arguments[0] % $arguments[1] }))
 	}
 
 	[void] interpret([List[Stmt]] $Statements) { 
@@ -131,6 +132,15 @@ class Interpreter: StmtVisitor {
 		return $function.call($this, $arguments)
 	}
 
+	[Object] visitGetExpr([Get]$expr) {
+		[Object] $object = $this.evaluate($expr.object)
+		if ($object -is [LoxInstance]) {
+			$objectInstance = $object -as [LoxInstance]
+			return $objectInstance.get($expr.name)
+		}
+		throw [RuntimeError]::new($expr.name, "Only instances have properties.")
+	}
+
 	[Object] visitGroupingExpr([Grouping]$expr) {
 		return $this.evaluate($expr.expression)
 	}
@@ -149,6 +159,23 @@ class Interpreter: StmtVisitor {
 			if (!$this.isTruthy($left)) { return $left }
 		}
 		return $this.evaluate($expr.right)
+	}
+
+	[Object] visitSetExpr([Set] $expr) {
+		[Object] $object = $this.evaluate($expr.object)
+
+
+		if (!($object -is [LoxInstance])) {
+			throw [RuntimeError]::new($expr.name, "Only instances have fields.")
+		}
+
+		[Object] $value = $this.evaluate($expr.value)
+		([LoxInstance]$object).set($expr.name, $value)
+		return $value
+	}
+
+	[Object] visitThizExpr([Thiz]$expr) {
+		return $this.lookupVariable($expr.keyword, $expr)
 	}
 
 	[Object] visitUnaryExpr([Unary]$expr) {
@@ -237,6 +264,19 @@ class Interpreter: StmtVisitor {
 
 	[void] visitBlockStmt([Block] $stmt) {
 		$this.executeBlock($stmt.statements, [Environment]::new($this.environment))
+	}
+
+	[void] visitClassStmt([Class] $stmt) {
+		$this.environment.defineValue($stmt.name.lexeme, $null)
+
+		[Dictionary[string, LoxFunction]] $methods = [Dictionary[string, LoxFunction]]::new()
+		foreach ($method in $stmt.methods) {
+			[LoxFunction] $function = [LoxFunction]::new($method, $this.environment)
+			$methods[$method.name.lexeme] = $function
+		}
+
+		[LoxClass] $klass = [LoxClass]::new($stmt.name.lexeme, $methods)
+		$this.environment.assign($stmt.name, $klass)
 	}
 
 	[void] visitTerminalExprStmt([TerminalExpr] $stmt) {

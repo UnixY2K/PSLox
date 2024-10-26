@@ -1,9 +1,11 @@
 using module .\Token.psm1
 using module .\RuntimeError.psm1
 
+using namespace System.Collections.Generic
+
 class Environment {
 	[Environment] hidden $enclosing
-	[hashtable] $values = @{}
+	[Dictionary[string, object]] hidden $values = [Dictionary[string, object]]::new()
 
 	Environment() {
 		$this.Init($null)

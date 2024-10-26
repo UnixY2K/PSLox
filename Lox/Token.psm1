@@ -24,7 +24,7 @@ class Token {
 		}
 	}
 
-	[string] toString() {
+	[string] ToString() {
 		return "Token(Type=$($this.Type ?? "UNDEFINED"), Lexeme=$($this.Lexeme ?? "UNDEFINED"), Literal=$($this.Literal ?? "UNDEFINED"))"
 	}
 

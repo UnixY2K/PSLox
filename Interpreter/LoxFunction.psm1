@@ -1,5 +1,6 @@
 using module .\LoxCallable.psm1
 using module .\Interpreter.psm1
+using module .\LoxInstance.psm1
 using module .\Jump.psm1
 using module ..\Lox\Stmt.psm1
 using module ..\Lox\RuntimeError.psm1
@@ -13,6 +14,12 @@ class LoxFunction: LoxCallable {
 	LoxFunction([Function]$declaration, [Environment]$closure) {
 		$this.declaration = $declaration
 		$this.closure = $closure
+	}
+
+	[LoxFunction] bind([LoxInstance]$instance) {
+		[Environment] $environment = [Environment]::new($this.closure)
+		$environment.defineValue("this", $instance)
+		return [LoxFunction]::new($this.declaration, $environment)
 	}
 
 	[int] arity() { return $this.declaration.params.Count }
