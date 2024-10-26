@@ -10,6 +10,7 @@ using namespace System.Collections.Generic
 enum FunctionType {
 	NONE
 	FUNCTION
+	INITIALIZER
 	METHOD
 }
 
@@ -123,6 +124,9 @@ class Resolver: StmtVisitor {
 
 		foreach ($method in $stmt.methods) {
 			$declaration = [FunctionType]::METHOD
+			if ($method.name.lexeme -eq "init") {
+				$declaration = [FunctionType]::INITIALIZER
+			}
 			$this.resolveFunction($method, $declaration)
 		}
 
@@ -172,6 +176,9 @@ class Resolver: StmtVisitor {
 		}
 		# if there is a value we resolve it
 		if ($null -ne $stmt.value) {
+			if ($this.currentFunction -eq [FunctionType]::INITIALIZER) {
+				[Lox]::error($stmt.keyword, "Cannot return a value from an initializer.")
+			}
 			$this.resolve($stmt.value)
 		}
 	}

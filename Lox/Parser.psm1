@@ -200,6 +200,9 @@ class Parser {
 	}
 
 	[Function] hidden function([string] $kind) {
+		# static method
+		$this.match(@([TokenType]::TOKEN_CLASS))
+
 		[Token] $name = $this.consume([TokenType]::TOKEN_IDENTIFIER, "Expect $kind name.")
 		$this.consume([TokenType]::TOKEN_LEFT_PAREN, "Expect '(' after $kind name.")
 		[List[Token]] $parameters = [List[Token]]::new()

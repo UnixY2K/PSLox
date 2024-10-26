@@ -23,10 +23,18 @@ class LoxClass: LoxCallable {
 
 	[Object] call([Interpreter] $interpreter, [List[Object]] $arguments) {
 		[LoxInstance] $instance = [LoxInstance]::new($this)
+		[LoxFunction] $initializer = $this.findMethod("init")
+		if ($null -ne $initializer) {
+			$initializer.bind($instance).call($interpreter, $arguments)
+		}
 		return $instance
 	}
 
 	[int] arity() {
+		[LoxFunction] $initializer = $this.findMethod("init")
+		if ($null -ne $initializer) {
+			return $initializer.arity()
+		}
 		return 0
 	}
 

@@ -271,7 +271,7 @@ class Interpreter: StmtVisitor {
 
 		[Dictionary[string, LoxFunction]] $methods = [Dictionary[string, LoxFunction]]::new()
 		foreach ($method in $stmt.methods) {
-			[LoxFunction] $function = [LoxFunction]::new($method, $this.environment)
+			[LoxFunction] $function = [LoxFunction]::new($method, $this.environment, $method.name.lexeme -eq "init")
 			$methods[$method.name.lexeme] = $function
 		}
 
@@ -291,7 +291,7 @@ class Interpreter: StmtVisitor {
 	}
 
 	[void] visitFunctionStmt([Function] $stmt) {
-		[LoxFunction] $function = [LoxFunction]::new($stmt, $this.environment)
+		[LoxFunction] $function = [LoxFunction]::new($stmt, $this.environment, $false)
 		$this.environment.defineValue($stmt.name.lexeme, $function)
 	}
 
