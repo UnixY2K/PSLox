@@ -52,6 +52,12 @@ class Parser {
 
 	[Stmt] hidden classDeclaration() {
 		[Token] $name = $this.consume([TokenType]::TOKEN_IDENTIFIER, "Expect class name.")
+
+		[Variable] $superclass = $null
+		if ($this.match(@([TokenType]::TOKEN_LESS))) {
+			$this.consume([TokenType]::TOKEN_IDENTIFIER, "Expect superclass name.")
+			$superclass = [Variable]::new($this.previous())
+		}
 		
 		$this.consume([TokenType]::TOKEN_LEFT_BRACE, "Expect '{' before class body.")
 
@@ -61,7 +67,7 @@ class Parser {
 		}
 
 		$this.consume([TokenType]::TOKEN_RIGHT_BRACE, "Expect '}' after class body.")
-		return [Class]::new($name, $methods)
+		return [Class]::new($name, $superclass, $methods)
 	}
 
 	[Stmt] hidden statement() {
@@ -421,6 +427,13 @@ class Parser {
 	
 		if ($this.match(@([TokenType]::TOKEN_NUMBER, [TokenType]::TOKEN_STRING))) {
 			return [Literal]::new($this.previous().literal)
+		}
+
+		if ($this.match(@([TokenType]::TOKEN_SUPER))) {
+			[Token] $keyword = $this.previous()
+			$this.consume([TokenType]::TOKEN_DOT, "Expect '.' after 'super'.")
+			$this.consume([TokenType]::TOKEN_IDENTIFIER, "Expect superclass method name.")
+			return [Super]::new($keyword, $this.previous())
 		}
 
 		if ($this.match(@([TokenType]::TOKEN_THIS))) {

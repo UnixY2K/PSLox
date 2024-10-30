@@ -147,6 +147,7 @@ defineAst $outputDir "Expr" @("Token.psm1") @("System.Collections.Generic") @(
 	"Literal		: Object value",
 	"Logical		: Expr left, Token operator, Expr right",
 	"Set			: Expr object, Token name, Expr value",
+	"Super			: Token keyword, Token method",
 	"Thiz			: Token keyword",
 	"Unary			: Token operator, Expr right",
 	"Variable		: Token name",
@@ -155,7 +156,7 @@ defineAst $outputDir "Expr" @("Token.psm1") @("System.Collections.Generic") @(
 
 defineAst $outputDir "Stmt" @("Token.psm1", "Expr.psm1") @("System.Collections.Generic") @(
 	"Block			: List[Stmt] statements",
-	"Class			: Token name, List[Function] methods",
+	"Class			: Token name, Variable superclass, List[Function] methods",
 	"TerminalExpr	: Expr expression",
 	"Expression		: Expr expression",
 	"Function		: Token name, List[Token] params, List[Stmt] body",

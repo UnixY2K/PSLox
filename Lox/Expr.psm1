@@ -12,6 +12,7 @@ class ExprVisitor {
 	visitLiteralExpr([Literal]$Literal) {}
 	visitLogicalExpr([Logical]$Logical) {}
 	visitSetExpr([Set]$Set) {}
+	visitSuperExpr([Super]$Super) {}
 	visitThizExpr([Thiz]$Thiz) {}
 	visitUnaryExpr([Unary]$Unary) {}
 	visitVariableExpr([Variable]$Variable) {}
@@ -142,6 +143,19 @@ class Set : Expr {
 	}
 	[Object] accept([ExprVisitor]$Visitor) {
 		return $Visitor.visitSetExpr($this)
+	}
+}
+
+class Super : Expr {
+	[Token] $keyword
+	[Token] $method
+
+	Super([Token] $keyword, [Token] $method) {
+		$this.keyword = $keyword
+		$this.method = $method
+	}
+	[Object] accept([ExprVisitor]$Visitor) {
+		return $Visitor.visitSuperExpr($this)
 	}
 }
 

@@ -8,9 +8,11 @@ using namespace System.Collections.Generic
 class LoxClass: LoxCallable {
 	[string] $name
 	[Dictionary[string, LoxFunction]] hidden $methods = [Dictionary[string, LoxFunction]]::new()
+	[LoxClass] $superclass
 
-	LoxClass([string] $name, [Dictionary[string, LoxFunction]] $methods) {
+	LoxClass([string] $name, [LoxClass]$superclass, [Dictionary[string, LoxFunction]] $methods) {
 		$this.name = $name
+		$this.superclass = $superclass
 		$this.methods = $methods
 	}
 
@@ -18,6 +20,11 @@ class LoxClass: LoxCallable {
 		if ($this.methods.ContainsKey($name)) {
 			return $this.methods[$name]
 		}
+
+		if ($null -ne $this.superclass) {
+			return $this.superclass.findMethod($name)
+		}
+		
 		return $null
 	}
 

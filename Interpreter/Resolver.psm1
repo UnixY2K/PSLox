@@ -17,6 +17,7 @@ enum FunctionType {
 enum ClassType {
 	NONE
 	CLASS
+	SUBCLASS
 }
 
 class Resolver: StmtVisitor {
@@ -119,6 +120,20 @@ class Resolver: StmtVisitor {
 		$this.declareScope($stmt.name)
 		$this.defineScope($stmt.name)
 
+		if ($null -ne $stmt.superclass -and $stmt.name.lexeme -eq $stmt.superclass.name.lexeme) {
+			[Lox]::error($stmt.superclass.name, "A class cannot inherit from itself.")
+		}
+
+		if ($null -ne $stmt.superclass) {
+			$this.resolve($stmt.superclass)
+		}
+
+		if ($null -ne $stmt.superclass) {
+			$this.currentClass = [ClassType]::SUBCLASS
+			$this.beginScope()
+			$this.scopes.Peek()["super"] = $true
+		}
+
 		$this.beginScope()
 		$this.scopes.Peek()["this"] = $true
 
@@ -132,6 +147,10 @@ class Resolver: StmtVisitor {
 
 		$this.endScope()
 		$this.currentClass = $enclosingClass
+
+		if ($null -ne $stmt.superclass) {
+			$this.endScope()
+		}
 	}
 
 	[void] visitTerminalExprStmt([TerminalExpr] $stmt) {
@@ -238,6 +257,17 @@ class Resolver: StmtVisitor {
 	[void] visitSetExpr([Set] $expr) {
 		$this.resolve($expr.value)
 		$this.resolve($expr.object)
+	}
+
+	[void] visitSuperExpr([Super] $expr) {
+		if ($this.currentClass -eq [ClassType]::NONE) {
+			[Lox]::error($expr.keyword, "Cannot use 'super' outside of a class.")
+		}
+		elseif ($this.currentClass -ne [ClassType]::SUBCLASS) {
+			[Lox]::error($expr.keyword, "Cannot use 'super' in a class with no superclass.")
+		}
+
+		$this.resolveLocal($expr, $expr.keyword)
 	}
 
 	[void] visitThizExpr([Thiz] $expr) {

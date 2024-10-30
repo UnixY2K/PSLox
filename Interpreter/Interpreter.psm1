@@ -174,6 +174,21 @@ class Interpreter: StmtVisitor {
 		return $value
 	}
 
+	[Object] visitSuperExpr([Super] $expr) {
+		[int] $distance = $this.locals[$expr]
+		[LoxClass] $superclass = $this.environment.getAt($distance, "super")
+
+		[LoxInstance] $object = $this.environment.getAt($distance - 1, "this")
+
+		[LoxFunction] $method = $superclass.findMethod($expr.method.lexeme)
+
+		if ($null -eq $method) {
+			throw [RuntimeError]::new($expr.method, "Undefined property '$($expr.method.lexeme)'.")
+		}
+
+		return $method.bind($object)
+	}
+
 	[Object] visitThizExpr([Thiz]$expr) {
 		return $this.lookupVariable($expr.keyword, $expr)
 	}
@@ -267,7 +282,21 @@ class Interpreter: StmtVisitor {
 	}
 
 	[void] visitClassStmt([Class] $stmt) {
+		[Object] $superclass = $null
+		if ($null -ne $stmt.superclass) {
+			$superclass = $this.evaluate($stmt.superclass)
+			if (!($superclass -is [LoxClass])) {
+				throw [RuntimeError]::new($stmt.superclass.name, "Superclass must be a class.")
+			}
+		}
+
+
 		$this.environment.defineValue($stmt.name.lexeme, $null)
+
+		if ($null -ne $stmt.superclass) {
+			$this.environment = [Environment]::new($this.environment)
+			$this.environment.defineValue("super", $superclass)
+		}
 
 		[Dictionary[string, LoxFunction]] $methods = [Dictionary[string, LoxFunction]]::new()
 		foreach ($method in $stmt.methods) {
@@ -275,7 +304,12 @@ class Interpreter: StmtVisitor {
 			$methods[$method.name.lexeme] = $function
 		}
 
-		[LoxClass] $klass = [LoxClass]::new($stmt.name.lexeme, $methods)
+		[LoxClass] $klass = [LoxClass]::new($stmt.name.lexeme, [LoxClass]$superclass, $methods)
+
+		if ($null -ne $superclass) {
+			$this.environment = $this.environment.enclosing
+		}
+
 		$this.environment.assign($stmt.name, $klass)
 	}
 

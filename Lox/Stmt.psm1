@@ -33,10 +33,12 @@ class Block : Stmt {
 
 class Class : Stmt {
 	[Token] $name
+	[Variable] $superclass
 	[List[Function]] $methods
 
-	Class([Token] $name, [List[Function]] $methods) {
+	Class([Token] $name, [Variable] $superclass, [List[Function]] $methods) {
 		$this.name = $name
+		$this.superclass = $superclass
 		$this.methods = $methods
 	}
 	[Object] accept([StmtVisitor]$Visitor) {
